@@ -43,7 +43,7 @@ class BaseTask():
         self.num_states = cfg["env"].get("numStates", 0)
         self.num_actions = cfg["env"]["numActions"]
 
-        self.control_freq_inv = cfg["env"].get("controlFrequencyInv", 1)
+        self.control_freq_inv = cfg["env"]["controlFrequencyInv"]
 
         # optimization flags for pytorch JIT
         torch._C._jit_set_profiling_mode(False)
