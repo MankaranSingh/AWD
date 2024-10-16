@@ -2,23 +2,25 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 500
+  episodeLength: 600
   isFlagrun: False
   enableDebugVis: False
   
   pdControl: True
   powerScale: 1.0
-  controlFrequencyInv: 2 # 30 Hz
+  controlFrequencyInv: 1 # 30 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.0
-  numAMPObsSteps: 5
+  numAMPObsSteps: 9
   
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
-  contactBodies: ["left_foot", "right_foot"]
+  contactBodies: ["left_foot_link", "right_foot_link"]
   terminationHeight: -0.05
   enableEarlyTermination: True
   enableTaskObs: True
+  commandChangeStepsMin: 1000
+  commandChangeStepsMax: 1001
 
   asset:
     assetRoot: "awd/data/assets"
@@ -32,17 +34,17 @@ env:
   learn:
     # rewards
     linearVelocityXYRewardScale: 0.5
-    angularVelocityZRewardScale: 0.25
-    torqueRewardScale: -0.000025
+    angularVelocityZRewardScale: 0.5
+    torqueRewardScale: 0.0
 
     # normalization
-    linearVelocityScale: 0.5
+    linearVelocityScale: 1.0
     angularVelocityScale: 0.25
   
   randomCommandVelocityRanges:
-    linear_x: [-0.3, 0.3] # min max [m/s]
-    linear_y: [-0.3, 0.3]   # min max [m/s]
-    yaw: [-0.2, 0.2]          # min max [rad/s]
+    linear_x: [-0.0, 0.0] # min max [m/s]
+    linear_y: [-0.0, 0.0]   # min max [m/s]
+    yaw: [-0.8, 0.8]          # min max [rad/s]
 
 sim:
   substeps: 2
@@ -56,6 +58,7 @@ sim:
     bounce_threshold_velocity: 0.2
     max_depenetration_velocity: 10.0
     default_buffer_size_multiplier: 10.0
+    contact_collection: 1
 
   flex:
     num_inner_iterations: 10

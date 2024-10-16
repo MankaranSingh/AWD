@@ -97,6 +97,8 @@ class DucklingViewMotion(DucklingAMP):
         # print(torch.isnan(dof_vel).sum(), "### dof_vel")
         # print(torch.isnan(root_ang_vel).sum(), "### root_ang_vel")
 
+        #print(self._contact_forces.shape, self._contact_forces[:, self._contact_body_ids])
+
         self._set_env_state(env_ids=env_ids, 
                             root_pos=root_pos, 
                             root_rot=root_rot, 

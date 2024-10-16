@@ -345,7 +345,8 @@ class Duckling(BaseTask):
         print(f"self.num_dof: {self.num_dof}")
         self.num_joints = self.gym.get_asset_joint_count(duckling_asset)
         print(f"num_joints: {self.num_joints}")
-
+        self.body_names = [self.gym.get_asset_rigid_body_name(duckling_asset, i) for i in range(self.num_bodies)]
+        print("body names:", self.body_names)
         print(f"_joint count: {len(self._joints)}")
         self.duckling_handles = []
         self.envs = []

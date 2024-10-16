@@ -34,6 +34,11 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         # randomization
         self.randomization_params = self.cfg["task"]["randomization_params"]
         self.randomize = self.cfg["task"]["randomize"]
+        self._command_change_steps = self.cfg["task"]["randomize"]
+
+        self._command_change_steps_min = cfg["env"]["commandChangeStepsMin"]
+        self._command_change_steps_max = cfg["env"]["commandChangeStepsMax"]
+        self._command_change_steps = torch.zeros([self.num_envs], device=self.device, dtype=torch.int64)
 
         # command ranges
         self.command_x_range = self.cfg["env"]["randomCommandVelocityRanges"]["linear_x"]
@@ -82,21 +87,24 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
 
     def _update_task(self):
         # TODO: change commands after certain steps.
-        # reset_task_mask = self.progress_buf >= self._heading_change_steps
-        # rest_env_ids = reset_task_mask.nonzero(as_tuple=False).flatten()
-        # if len(rest_env_ids) > 0:
-        #     self._reset_task(rest_env_ids)
+        reset_task_mask = self.progress_buf >= self._command_change_steps
+        rest_env_ids = reset_task_mask.nonzero(as_tuple=False).flatten()
+        if len(rest_env_ids) > 0:
+            self._reset_task(rest_env_ids)
         return
 
     def _reset_task(self, env_ids):
         # Randomization can happen only at reset time, since it can reset actor positions on GPU
         if self.randomize:
             self.apply_randomizations(self.randomization_params)
+
+        change_steps = torch.randint(low=self._command_change_steps_min, high=self._command_change_steps_max,
+                                     size=(len(env_ids),), device=self.device, dtype=torch.int64)
         
         self.commands_x[env_ids] = torch_rand_float(self.command_x_range[0], self.command_x_range[1], (len(env_ids), 1), device=self.device).squeeze()
         self.commands_y[env_ids] = torch_rand_float(self.command_y_range[0], self.command_y_range[1], (len(env_ids), 1), device=self.device).squeeze()
         self.commands_yaw[env_ids] = torch_rand_float(self.command_yaw_range[0], self.command_yaw_range[1], (len(env_ids), 1), device=self.device).squeeze()
-
+        self._command_change_steps[env_ids] = self.progress_buf[env_ids] + change_steps
         return
 
     def _compute_task_obs(self, env_ids=None):

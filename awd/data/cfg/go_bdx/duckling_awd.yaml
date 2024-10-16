@@ -15,7 +15,7 @@ env:
   
   localRootObs: False
   keyBodies: ["left_foot", "right_foot"]
-  contactBodies: ["left_foot", "right_foot"]
+  contactBodies: ["left_foot_link", "right_foot_link"]
   terminationHeight: -0.1
   enableEarlyTermination: True
 
