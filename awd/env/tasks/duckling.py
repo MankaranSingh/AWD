@@ -136,6 +136,7 @@ class Duckling(BaseTask):
 
         self.last_contacts = torch.zeros(self.num_envs, len(self._key_body_ids), dtype=torch.bool, device=self.device, requires_grad=False)
         self.feet_air_time = torch.zeros(self.num_envs, self._key_body_ids.shape[0], dtype=torch.float, device=self.device, requires_grad=False)
+        self.last_actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
         
         if self.viewer != None:
             self._init_camera()
@@ -198,6 +199,7 @@ class Duckling(BaseTask):
         self.reset_buf[env_ids] = 0
         self._terminate_buf[env_ids] = 0
         self.feet_air_time[env_ids] = 0
+        self.last_actions[env_ids] = 0.
         return
 
     def _create_ground_plane(self):

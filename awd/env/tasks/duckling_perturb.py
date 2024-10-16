@@ -32,24 +32,25 @@ from isaacgym import gymapi, gymtorch
 from isaacgym.torch_utils import *
 
 import env.tasks.duckling_amp as duckling_amp
+import env.tasks.duckling_command as duckling_command
 
 PERTURB_OBJS = [
-    ["small", 200],
+    ["small", 50],
     ["small", 7],
-    ["small", 10],
-    ["small", 35],
-    ["small", 2],
-    ["small", 2],
-    ["small", 3],
-    ["small", 2],
-    ["small", 2],
-    ["small", 3],
-    ["small", 2],
-    ["large", 60],
-    ["small", 300],
+    # ["small", 10],
+    # ["small", 35],
+    # ["small", 2],
+    # ["small", 2],
+    # ["small", 3],
+    # ["small", 2],
+    # ["small", 2],
+    # ["small", 3],
+    # ["small", 2],
+    # ["large", 60],
+    # ["small", 300],
 ]
 
-class DucklingPerturb(duckling_amp.DucklingAMP):
+class DucklingPerturb(duckling_command.DucklingCommand):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
         super().__init__(cfg=cfg,
                          sim_params=sim_params,
@@ -64,8 +65,8 @@ class DucklingPerturb(duckling_amp.DucklingAMP):
         self._proj_h_max = 2
         self._proj_steps = 150
         self._proj_warmup_steps = 1
-        self._proj_speed_min = 30
-        self._proj_speed_max = 40
+        self._proj_speed_min = 10
+        self._proj_speed_max = 20
         assert(self._proj_warmup_steps < self._proj_steps)
 
         self._build_proj_tensors()
@@ -239,18 +240,19 @@ class DucklingPerturb(duckling_amp.DucklingAMP):
     def _draw_task(self):
         super()._draw_task()
         
-        cols = np.array([[1.0, 0.0, 0.0]], dtype=np.float32)
+        # cols = np.array([[1.0, 0.0, 0.0]], dtype=np.float32)
 
-        self.gym.clear_lines(self.viewer)
+        # self.gym.clear_lines(self.viewer)
 
-        starts = self._duckling_root_states[..., 0:3]
-        ends = self._proj_states[..., 0:3]
-        verts = torch.cat([starts, ends], dim=-1).cpu().numpy()
+        # starts = self._duckling_root_states[..., 0:3]
+        # ends = self._proj_states[..., 0:3]
+        # print(starts.shape, ends.shape)
+        # verts = torch.cat([starts, ends], dim=-1).cpu().numpy()
 
-        for i, env_ptr in enumerate(self.envs):
-            curr_verts = verts[i]
-            curr_verts = curr_verts.reshape([1, 6])
-            self.gym.add_lines(self.viewer, env_ptr, curr_verts.shape[0], curr_verts, cols)
+        # for i, env_ptr in enumerate(self.envs):
+        #     curr_verts = verts[i]
+        #     curr_verts = curr_verts.reshape([1, 6])
+        #     self.gym.add_lines(self.viewer, env_ptr, curr_verts.shape[0], curr_verts, cols)
 
         return
 

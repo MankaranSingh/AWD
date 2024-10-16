@@ -114,7 +114,6 @@ class DucklingViewMotion(DucklingAMP):
         self.gym.set_dof_state_tensor_indexed(self.sim,
                                               gymtorch.unwrap_tensor(self._dof_state),
                                               gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
-        print()
         return
 
     def _compute_reset(self):

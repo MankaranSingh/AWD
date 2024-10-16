@@ -70,7 +70,7 @@ parser.add_argument(
 args = parser.parse_args()
 args.hardware = True
 
-FPS = 60
+FPS = 30
 MESHCAT_FPS = 20
 DISPLAY_MESHCAT = args.meshcat_viz
 

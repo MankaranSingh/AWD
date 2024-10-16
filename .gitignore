@@ -7,5 +7,7 @@ output/
 log/
 nn/
 recordings/
-anim.py
-sim.py
+anim.npy
+sim.npy
+motions/
+

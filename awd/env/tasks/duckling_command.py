@@ -30,6 +30,8 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.rew_scales["lin_vel_xy"] = self.cfg["env"]["learn"]["linearVelocityXYRewardScale"]
         self.rew_scales["ang_vel_z"] = self.cfg["env"]["learn"]["angularVelocityZRewardScale"]
         self.rew_scales["torque"] = self.cfg["env"]["learn"]["torqueRewardScale"]
+        self.rew_scales["air_time"] = self.cfg["env"]["learn"]["feetAirTimeRewardScale"]
+        self.rew_scales["action_rate"] = self.cfg["env"]["learn"]["actionRateRewardScale"]
 
         # randomization
         self.randomization_params = self.cfg["task"]["randomization_params"]
@@ -115,7 +117,18 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         return obs
 
     def _compute_reward(self, actions):
-        self.rew_buf[:] = compute_task_reward(self._duckling_root_states, self.commands,  self.torques, self.rew_scales)
+        
+        contact = self.contact_forces[:, self._contact_body_ids, 2] > 1.
+        first_contact = (self.feet_air_time > 0.) * contact
+        self.feet_air_time += self.dt
+        rew_airTime = torch.sum((self.feet_air_time - 0.5) * first_contact, dim=1) * self.rew_scales["air_time"] # reward only on first contact with the ground
+        rew_airTime *= torch.norm(self.commands, dim=1) > 0.1 #no reward for zero command
+        self.feet_air_time *= ~contact
+
+        # action rate penalty
+        rew_action_rate = torch.sum(torch.square(self.last_actions - self.actions), dim=1) * self.rew_scales["action_rate"]
+
+        self.rew_buf[:] = compute_task_reward(self._duckling_root_states, self.commands,  self.torques, self.rew_scales) + rew_action_rate + rew_airTime
         return
 
 #####################################################################
