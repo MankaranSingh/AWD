@@ -125,7 +125,7 @@ class PlacoWalkEngine:
         with open(filename, "r") as f:
             data = json.load(f)
         params = self.parameters
-        load_parameters(data)
+        self.load_parameters(data)
 
     def load_parameters(self, data):
         params = self.parameters
