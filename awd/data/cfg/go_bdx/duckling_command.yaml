@@ -33,8 +33,8 @@ env:
 
   learn:
     # rewards
-    linearVelocityXYRewardScale: 1.5
-    angularVelocityZRewardScale: 1.5
+    linearVelocityXYRewardScale: 1.0
+    angularVelocityZRewardScale: 1.0
     torqueRewardScale: 0.0
     feetAirTimeRewardScale: 0.1
     actionRateRewardScale: -0.01
