@@ -12,3 +12,6 @@ sim.npy
 motions/
 stuff
 
+*.egg-info/
+*.onnx
+*.pkl

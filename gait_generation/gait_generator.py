@@ -9,7 +9,7 @@ import placo
 from placo_utils.visualization import footsteps_viz, robot_frame_viz, robot_viz
 from scipy.spatial.transform import Rotation as R
 
-from gait.placo_walk_engine import PlacoWalkEngine
+from placo_walk_engine import PlacoWalkEngine
 
 
 def open_browser():
@@ -75,7 +75,7 @@ parser.add_argument(
 args = parser.parse_args()
 args.hardware = True
 
-FPS = 60
+FPS = 30
 MESHCAT_FPS = 20
 DISPLAY_MESHCAT = args.meshcat_viz
 
@@ -147,6 +147,7 @@ start = time.time()
 last_record = 0
 last_meshcat_display = 0
 prev_root_position = [0, 0, 0]
+prev_root_orientation_quat = None
 prev_root_orientation_euler = [0, 0, 0]
 prev_left_toe_pos = [0, 0, 0]
 prev_right_toe_pos = [0, 0, 0]
@@ -160,6 +161,25 @@ added_frame_info = False
 # center_y_pos = None
 center_y_pos = -(pwe.parameters.feet_spacing / 2)
 print(f"center_y_pos: {center_y_pos}")
+
+def compute_angular_velocity(quat, prev_quat, dt):
+    # Convert quaternions to scipy Rotation objects
+    if prev_quat is None:
+        prev_quat = quat
+    r1 = R.from_quat(quat)  # Current quaternion
+    r0 = R.from_quat(prev_quat)  # Previous quaternion
+    
+    # Compute relative rotation: r_rel = r0^(-1) * r1
+    r_rel = r0.inv() * r1
+    
+    # Convert relative rotation to axis-angle
+    axis, angle = r_rel.as_rotvec(), np.linalg.norm(r_rel.as_rotvec())
+    
+    # Angular velocity (in radians per second)
+    angular_velocity = axis * (angle / dt)
+    
+    return list(angular_velocity)
+
 while True:
     pwe.tick(DT)
     if pwe.t <= 0 + args.skip_warmup * 1:
@@ -229,13 +249,15 @@ while True:
         # print("world linear vel", world_linear_vel)
         # print("body linear vel", body_linear_vel)
 
-        world_angular_vel = list(
-            (
-                R.from_quat(root_orientation_quat).as_euler("xyz")
-                - prev_root_orientation_euler
-            )
-            / (1 / FPS)
-        )
+        world_angular_vel = compute_angular_velocity(root_orientation_quat, prev_root_orientation_quat, (1 / FPS))
+
+        # world_angular_vel = list(
+        #     (
+        #         R.from_quat(root_orientation_quat).as_euler("xyz")
+        #         - prev_root_orientation_euler
+        #     )
+        #     / (1 / FPS)
+        # )
         avg_yaw_vel.append(world_angular_vel[2])
         body_angular_vel = list(body_rot_mat.T @ world_angular_vel)
         # print("world angular vel", world_angular_vel)
@@ -333,6 +355,7 @@ while True:
                 )
 
         prev_root_position = root_position.copy()
+        prev_root_orientation_quat = root_orientation_quat.copy()
         prev_root_orientation_euler = (
             R.from_quat(root_orientation_quat).as_euler("xyz").copy()
         )

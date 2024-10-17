@@ -27,25 +27,32 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import torch
+import pickle
 
 import env.tasks.duckling_amp as duckling_amp
 
+
 class DucklingAMPTask(duckling_amp.DucklingAMP):
-    def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
+    def __init__(
+        self, cfg, sim_params, physics_engine, device_type, device_id, headless
+    ):
         self._enable_task_obs = cfg["env"]["enableTaskObs"]
 
-        super().__init__(cfg=cfg,
-                         sim_params=sim_params,
-                         physics_engine=physics_engine,
-                         device_type=device_type,
-                         device_id=device_id,
-                         headless=headless)
+        super().__init__(
+            cfg=cfg,
+            sim_params=sim_params,
+            physics_engine=physics_engine,
+            device_type=device_type,
+            device_id=device_id,
+            headless=headless,
+        )
+        if self.cfg["env"]["debugSaveObs"]:
+            self.saved_obs = []
         return
 
-    
     def get_obs_size(self):
         obs_size = super().get_obs_size()
-        if (self._enable_task_obs):
+        if self._enable_task_obs:
             task_obs_size = self.get_task_obs_size()
             obs_size += task_obs_size
         return obs_size
@@ -78,17 +85,21 @@ class DucklingAMPTask(duckling_amp.DucklingAMP):
 
     def _compute_observations(self, env_ids=None):
         duckling_obs = self._compute_duckling_obs(env_ids)
-        
-        if (self._enable_task_obs):
+
+        if self._enable_task_obs:
             task_obs = self._compute_task_obs(env_ids)
             obs = torch.cat([duckling_obs, task_obs], dim=-1)
         else:
             obs = duckling_obs
 
-        if (env_ids is None):
+        if env_ids is None:
             self.obs_buf[:] = obs
         else:
             self.obs_buf[env_ids] = obs
+
+        if self.cfg["env"]["debugSaveObs"]:
+            self.saved_obs.append(self.obs_buf[0].cpu().numpy())
+            pickle.dump(self.saved_obs, open("saved_obs.pkl", "wb"))
         return
 
     def _compute_task_obs(self, env_ids=None):
