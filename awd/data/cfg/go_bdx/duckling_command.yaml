@@ -11,7 +11,7 @@ env:
   controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.0
-  numAMPObsSteps: 9
+  numAMPObsSteps: 5
   
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
@@ -33,20 +33,20 @@ env:
 
   learn:
     # rewards
-    linearVelocityXYRewardScale: 0.5
-    angularVelocityZRewardScale: 0.5
+    linearVelocityXYRewardScale: 1.5
+    angularVelocityZRewardScale: 1.5
     torqueRewardScale: 0.0
-    feetAirTimeRewardScale: 1.0
+    feetAirTimeRewardScale: 0.1
     actionRateRewardScale: -0.01
 
     # normalization
     linearVelocityScale: 1.0
-    angularVelocityScale: 0.25
+    angularVelocityScale: 1.0
   
   randomCommandVelocityRanges:
-    linear_x: [-0.8, 0.8] # min max [m/s]
-    linear_y: [-0.5, 0.5]   # min max [m/s]
-    yaw: [-1.0, 1.0]          # min max [rad/s]
+    linear_x: [-0.5, 0.5] # min max [m/s]
+    linear_y: [-0.0, 0.0]   # min max [m/s]
+    yaw: [-0.2, 0.2]          # min max [rad/s]
 
 sim:
   substeps: 2
@@ -85,18 +85,18 @@ task:
         operation: "additive"
         distribution: "gaussian"
         schedule: "linear"  # "linear" will linearly interpolate between no rand and max rand
-        schedule_steps: 3000
+        schedule_steps: 100000
     actor_params:
-      anymal:
+      duckling:
         color: True
         rigid_body_properties:
           mass: 
-            range: [0.5, 1.5]
+            range: [0.8, 1.5]
             operation: "scaling"
             distribution: "uniform"
             setup_only: True # Property will only be randomized once before simulation is started. See Domain Randomization Documentation for more info.
             schedule: "linear"  # "linear" will linearly interpolate between no rand and max rand
-            schedule_steps: 3000
+            schedule_steps: 100000
         rigid_shape_properties:
           friction:
             num_buckets: 500
@@ -104,35 +104,35 @@ task:
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 3000
+            schedule_steps: 100000
           restitution:
             range: [0., 0.7]
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 3000
+            schedule_steps: 100000
         dof_properties:
           damping: 
-            range: [0.5, 1.5]
+            range: [0.8, 1.5]
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 3000
+            schedule_steps: 100000
           stiffness: 
-            range: [0.5, 1.5]
+            range: [0.8, 1.5]
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 3000
-          lower:
-            range: [0, 0.01]
-            operation: "additive"
-            distribution: "gaussian"
-            schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 3000
-          upper:
-            range: [0, 0.01]
-            operation: "additive"
-            distribution: "gaussian"
-            schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 3000
+            schedule_steps: 100000
+          # lower:
+          #   range: [0, 0.01]
+          #   operation: "additive"
+          #   distribution: "gaussian"
+          #   schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
+          #   schedule_steps: 3000
+          # upper:
+          #   range: [0, 0.01]
+          #   operation: "additive"
+          #   distribution: "gaussian"
+          #   schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
+          #   schedule_steps: 3000

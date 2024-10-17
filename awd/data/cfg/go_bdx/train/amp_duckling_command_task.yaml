@@ -58,7 +58,7 @@ params:
     learning_rate: 4e-5
     lr_schedule: constant
     score_to_win: 20000
-    max_epochs: 10000
+    max_epochs: 100000
     save_best_after: 50
     save_frequency: 50
     print_stats: True
@@ -83,7 +83,7 @@ params:
     disc_logit_reg: 0.01
     disc_grad_penalty: 5
     disc_reward_scale: 2.0
-    disc_weight_decay: 0.00000
+    disc_weight_decay: 0.00001
     normalize_amp_input: True
     enable_eps_greedy: False
 

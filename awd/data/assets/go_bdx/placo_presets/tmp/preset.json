@@ -1,7 +1,7 @@
 {
-    "dx": 0.77,
-    "dy": -0.48,
-    "dtheta": -0.4,
+    "dx": 1.0,
+    "dy": 0,
+    "dtheta": 0,
     "duration": 2,
     "hardware": true,
     "trunk_mode": true,

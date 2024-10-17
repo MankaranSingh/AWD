@@ -136,13 +136,6 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
 #####################################################################
 
 @torch.jit.script
-def compute_task_observations(commands, command_scales):
-    # type: (Tensor, Tensor) -> Tensor
-    commands_scaled = commands * command_scales
-    obs = commands_scaled
-    return obs
-
-@torch.jit.script
 def compute_task_reward(
     # tensors
     root_states,
@@ -160,7 +153,7 @@ def compute_task_reward(
     base_ang_vel = quat_rotate_inverse(base_quat, root_states[:, 10:13])
 
     # velocity tracking reward
-    lin_vel_error = torch.sum(torch.square(commands[:, :2] - base_lin_vel[:, :2]), dim=1)
+    lin_vel_error = torch.sum(torch.square(commands[:, :1] - base_lin_vel[:, :1]), dim=1)
     ang_vel_error = torch.square(commands[:, 2] - base_ang_vel[:, 2])
     rew_lin_vel_xy = torch.exp(-lin_vel_error/0.25) * rew_scales["lin_vel_xy"]
     rew_ang_vel_z = torch.exp(-ang_vel_error/0.25) * rew_scales["ang_vel_z"]

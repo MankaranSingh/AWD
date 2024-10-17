@@ -564,6 +564,7 @@ class Duckling(BaseTask):
 
     def post_physics_step(self):
         self.progress_buf += 1
+        self.randomize_buf += 1
 
         self._refresh_sim_tensors()
         self._compute_observations()
