@@ -320,7 +320,7 @@ class Duckling(BaseTask):
         self.reset_buf[env_ids] = 0
         self._terminate_buf[env_ids] = 0
         self.feet_air_time[env_ids] = 0
-        self.last_actions[env_ids] = 0.
+        self.prev_actions[env_ids] = 0.
         return
 
     def _create_ground_plane(self):
