@@ -46,11 +46,14 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.command_x_range = self.cfg["env"]["randomCommandVelocityRanges"]["linear_x"]
         self.command_y_range = self.cfg["env"]["randomCommandVelocityRanges"]["linear_y"]
         self.command_yaw_range = self.cfg["env"]["randomCommandVelocityRanges"]["yaw"]
+
+        self.use_average_velocities = self.cfg["env"]["learn"]["useAverageVelocities"]
         
         # for key in self.rew_scales.keys():
-        #     self.rew_scales[key] *= self.dt
+        #      self.rew_scales[key] *= self.dt
 
         self.rew_scales["torque"] *= self.dt
+        self.rew_scales["action_rate"] *= self.dt
 
         # rename variables to maintain consistency with anymal env
         self.root_states = self._root_states
@@ -128,7 +131,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         # action rate penalty
         rew_action_rate = torch.sum(torch.square(self.last_actions - self.actions), dim=1) * self.rew_scales["action_rate"]
 
-        self.rew_buf[:] = compute_task_reward(self._duckling_root_states, self.commands,  self.torques, self.rew_scales) + rew_action_rate + rew_airTime
+        self.rew_buf[:] = compute_task_reward(self._duckling_root_states, self.commands,  self.torques, self.avg_velocities, self.rew_scales, self.use_average_velocities) + rew_action_rate + rew_airTime
         return
 
 #####################################################################
@@ -141,20 +144,26 @@ def compute_task_reward(
     root_states,
     commands,
     torques,
+    avg_velocities,
     # Dict
     rew_scales,
+    use_average_velocities
 ):
     # (reward, reset, feet_in air, feet_air_time, episode sums)
-    # type: (Tensor, Tensor, Tensor, Dict[str, float]) -> Tensor
+    # type: (Tensor, Tensor, Tensor, Tensor, Dict[str, float], bool) -> Tensor
 
     # prepare quantities (TODO: return from obs ?)
     base_quat = root_states[:, 3:7]
-    base_lin_vel = quat_rotate_inverse(base_quat, root_states[:, 7:10])
-    base_ang_vel = quat_rotate_inverse(base_quat, root_states[:, 10:13])
+    if not use_average_velocities:
+        base_lin_vel = quat_rotate_inverse(base_quat, root_states[:, 7:10])
+        base_ang_vel = quat_rotate_inverse(base_quat, root_states[:, 10:13])
+    else:
+        base_lin_vel = quat_rotate_inverse(base_quat, avg_velocities[:, :3])
+        base_ang_vel = quat_rotate_inverse(base_quat, avg_velocities[:, 3:])
 
     # velocity tracking reward
-    lin_vel_error = torch.sum(torch.square(commands[:, :1] - base_lin_vel[:, :1]), dim=1)
-    ang_vel_error = torch.square(commands[:, 2] - base_ang_vel[:, 2])
+    lin_vel_error = torch.sum(torch.square(commands[:, :2] - base_lin_vel[:, :2]), dim=1)
+    ang_vel_error = torch.sum(torch.square(commands[:, 2] - base_ang_vel[:, 2]))
     rew_lin_vel_xy = torch.exp(-lin_vel_error/0.25) * rew_scales["lin_vel_xy"]
     rew_ang_vel_z = torch.exp(-ang_vel_error/0.25) * rew_scales["ang_vel_z"]
 

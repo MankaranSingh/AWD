@@ -2,7 +2,7 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 600
+  episodeLength: 500
   isFlagrun: False
   enableDebugVis: False
   
@@ -21,6 +21,7 @@ env:
   enableTaskObs: True
   commandChangeStepsMin: 1000
   commandChangeStepsMax: 1001
+  period: 0.84
 
   asset:
     assetRoot: "awd/data/assets"
@@ -34,18 +35,19 @@ env:
   learn:
     # rewards
     linearVelocityXYRewardScale: 1.0
-    angularVelocityZRewardScale: 1.0
+    angularVelocityZRewardScale: 0.5
     torqueRewardScale: 0.0
     feetAirTimeRewardScale: 0.1
     actionRateRewardScale: -0.01
 
     # normalization
-    linearVelocityScale: 1.0
-    angularVelocityScale: 1.0
-  
+    linearVelocityScale: 2.0
+    angularVelocityScale: 0.25
+    useAverageVelocities: True
+
   randomCommandVelocityRanges:
     linear_x: [-0.5, 0.5] # min max [m/s]
-    linear_y: [-0.0, 0.0]   # min max [m/s]
+    linear_y: [-0.3, 0.3]   # min max [m/s]
     yaw: [-0.2, 0.2]          # min max [rad/s]
 
 sim:

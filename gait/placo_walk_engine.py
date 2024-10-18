@@ -118,12 +118,13 @@ class PlacoWalkEngine:
             2 * self.parameters.single_support_duration
             + 2 * self.parameters.double_support_duration()
         )
+        print("## period:", self.period)
 
     def load_defaults(self, filename):
         with open(filename, 'r') as f:
             data = json.load(f)
         params = self.parameters
-        load_parameters(data)
+        self.load_parameters(data)
 
     def load_parameters(self, data):
         params = self.parameters
