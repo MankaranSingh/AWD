@@ -2,7 +2,7 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 500
+  episodeLength: 300
   isFlagrun: False
   enableDebugVis: False
   
@@ -11,7 +11,7 @@ env:
   controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.0
-  numAMPObsSteps: 5
+  numAMPObsSteps: 10
   
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
@@ -37,7 +37,7 @@ env:
     linearVelocityXYRewardScale: 1.0
     angularVelocityZRewardScale: 0.5
     torqueRewardScale: 0.0
-    feetAirTimeRewardScale: 0.1
+    feetAirTimeRewardScale: 0.01
     actionRateRewardScale: -0.01
 
     # normalization
@@ -46,9 +46,9 @@ env:
     useAverageVelocities: True
 
   randomCommandVelocityRanges:
-    linear_x: [-0.5, 0.5] # min max [m/s]
-    linear_y: [-0.3, 0.3]   # min max [m/s]
-    yaw: [-0.2, 0.2]          # min max [rad/s]
+    linear_x: [-0.3, 0.3] # min max [m/s]
+    linear_y: [-0.2, 0.2]   # min max [m/s]
+    yaw: [-0.3, 0.3]          # min max [rad/s]
 
 sim:
   substeps: 2

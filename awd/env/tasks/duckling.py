@@ -139,7 +139,7 @@ class Duckling(BaseTask):
         self.actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
         self.last_actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
 
-        self.period = self.cfg["env"]["period"]
+        self.period = self.cfg["env"].get("period", 0.6)
         self.num_steps_per_period = int(self.period / self.dt)
 
         self.velocities_history = torch.zeros(self.num_envs, 6 * self.num_steps_per_period, dtype=torch.float, device=self.device, requires_grad=False)
@@ -738,6 +738,7 @@ def compute_duckling_observations(
 ):
     # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor) -> Tensor
     # realistic observations
+
     obs = torch.cat(
         (
             projected_gravity,
