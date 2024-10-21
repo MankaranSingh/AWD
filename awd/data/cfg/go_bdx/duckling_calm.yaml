@@ -11,8 +11,8 @@ env:
   controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.2
-  numAMPObsSteps: 10
-  numAMPEncObsSteps: 60
+  numAMPObsSteps: 4
+  numAMPEncObsSteps: 10
   
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
