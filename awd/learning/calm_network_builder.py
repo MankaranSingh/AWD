@@ -271,7 +271,7 @@ class CALMBuilder(amp_network_builder.AMPBuilder):
 
         def _build_linear_enc(self):
             mlp_args = {
-                'input_size': self._num_amp_obs_per_step * 10,
+                'input_size': self._num_amp_obs_per_step * 60,
                 'units': self._enc_units,
                 'activation': self._enc_activation,
                 'dense_func': torch.nn.Linear

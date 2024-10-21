@@ -24,7 +24,7 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [512, 256]
+      units: [1024, 1024, 512]
       activation: relu
       d2rl: False
 
@@ -34,21 +34,21 @@ params:
         name: None
 
     disc:
-      units: [512, 256]
+      units: [1024, 1024, 512]
       activation: relu
 
       initializer:
         name: default
 
     conditional_disc:
-      units: [ 512, 256 ]
+      units: [ 1024, 1024, 512 ]
       activation: relu
 
       initializer:
         name: default
 
     enc:
-      units: [ 512, 256 ]
+      units: [ 1024, 1024, 512 ]
       activation: relu
 
       initializer:
@@ -89,8 +89,8 @@ params:
     clip_value: False
     seq_len: 4
     bounds_loss_coef: 10
-    amp_obs_demo_buffer_size: 50000
-    amp_replay_buffer_size: 50000
+    amp_obs_demo_buffer_size: 200000
+    amp_replay_buffer_size: 200000
     amp_replay_keep_prob: 0.01
     amp_batch_size: 512
     amp_minibatch_size: 4096
