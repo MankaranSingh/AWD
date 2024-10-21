@@ -24,7 +24,7 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [1024, 1024, 512]
+      units: [512, 512, 256]
       activation: relu
       d2rl: False
 
@@ -34,14 +34,14 @@ params:
         name: None
 
     disc:
-      units: [1024, 1024, 512]
+      units: [512, 512, 256]
       activation: relu
 
       initializer:
         name: default
 
     enc:
-      units: [1024, 512]
+      units: [512, 256]
       activation: relu
       separate: False
 
@@ -51,7 +51,7 @@ params:
   load_checkpoint: False
 
   config:
-    name: Duckling
+    name: Humanoid
     env_name: rlgpu
     multi_gpu: False
     ppo: True
@@ -63,7 +63,7 @@ params:
     normalize_advantage: True
     gamma: 0.99
     tau: 0.95
-    learning_rate: 2e-5
+    learning_rate: 4e-5
     lr_schedule: constant
     score_to_win: 20000
     max_epochs: 100000
@@ -89,11 +89,11 @@ params:
     amp_minibatch_size: 4096
     disc_coef: 5
     disc_logit_reg: 0.01
-    disc_grad_penalty: 10
+    disc_grad_penalty: 5
     disc_reward_scale: 2
     disc_weight_decay: 0.0001
     normalize_amp_input: True
-    enable_eps_greedy: False
+    enable_eps_greedy: True
 
     latent_dim: 64
     latent_steps_min: 1
