@@ -54,6 +54,7 @@ class DucklingAMP(Duckling):
         self._state_init = DucklingAMP.StateInit[state_init]
         self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
         self._num_amp_obs_steps = cfg["env"]["numAMPObsSteps"]
+        self._num_amp_obs_enc_steps = cfg["env"].get("numAMPEncObsSteps", self._num_amp_obs_steps)
         assert(self._num_amp_obs_steps >= 2)
 
         self._reset_default_env_ids = []
@@ -95,47 +96,110 @@ class DucklingAMP(Duckling):
     def get_num_amp_obs(self):
         return self._num_amp_obs_steps * self._num_amp_obs_per_step
 
-    def fetch_amp_obs_demo(self, num_samples):
+    def get_num_enc_amp_obs(self):
+        return self._num_amp_obs_enc_steps * self._num_amp_obs_per_step
 
-        if (self._amp_obs_demo_buf is None):
-            self._build_amp_obs_demo_buf(num_samples)
-        else:
-            assert(self._amp_obs_demo_buf.shape[0] == num_samples)
-        
+    def fetch_amp_obs_demo(self, num_samples):
         motion_ids = self._motion_lib.sample_motions(num_samples)
-        
+
         # since negative times are added to these values in build_amp_obs_demo,
         # we shift them into the range [0 + truncate_time, end of clip]
         truncate_time = self.dt * (self._num_amp_obs_steps - 1)
         motion_times0 = self._motion_lib.sample_time(motion_ids, truncate_time=truncate_time)
         motion_times0 += truncate_time
 
-        amp_obs_demo = self.build_amp_obs_demo(motion_ids, motion_times0)
-        self._amp_obs_demo_buf[:] = amp_obs_demo.view(self._amp_obs_demo_buf.shape)
-        amp_obs_demo_flat = self._amp_obs_demo_buf.view(-1, self.get_num_amp_obs())
+        amp_obs_demo_flat = self.build_amp_obs_demo(motion_ids, motion_times0, self._num_amp_obs_steps).to(self.device).view(-1, self.get_num_amp_obs())
 
         return amp_obs_demo_flat
 
-    def build_amp_obs_demo(self, motion_ids, motion_times0):
+    def build_amp_obs_demo(self, motion_ids, motion_times0, num_steps):
         dt = self.dt
 
-        motion_ids = torch.tile(motion_ids.unsqueeze(-1), [1, self._num_amp_obs_steps])
+        motion_ids = torch.tile(motion_ids.unsqueeze(-1), [1, num_steps])
         motion_times = motion_times0.unsqueeze(-1)
-        time_steps = -dt * torch.arange(0, self._num_amp_obs_steps, device=self.device)
-        motion_times = motion_times + time_steps
+        time_steps = -dt * torch.arange(0, num_steps, device=self.device)
+        motion_times = torch.clip(motion_times + time_steps, min=0)
 
         motion_ids = motion_ids.view(-1)
         motion_times = motion_times.view(-1)
         root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
-               = self._motion_lib.get_motion_state(motion_ids, motion_times)
+            = self._motion_lib.get_motion_state(motion_ids, motion_times)
         amp_obs_demo = build_amp_observations(root_pos, root_rot, root_vel, root_ang_vel,
                                               dof_pos, dof_vel, key_pos,
                                               self._local_root_obs, self._root_height_obs,
                                               self._dof_obs_size, self._dof_offsets, self._dof_axis_array)
         return amp_obs_demo
+    
+    def fetch_amp_obs_demo_per_id(self, num_samples, motion_id):
+        motion_ids = torch.tensor([motion_id for _ in range(num_samples)], dtype=torch.long).view(-1)
+
+        # since negative times are added to these values in build_amp_obs_demo,
+        # we shift them into the range [0 + truncate_time, end of clip]
+        enc_window_size = self.dt * (self._num_amp_obs_enc_steps - 1)
+
+        enc_motion_times = self._motion_lib.sample_time(motion_ids, truncate_time=enc_window_size)
+        # make sure not to add more than motion clip length, negative amp_obs will show zero index amp_obs instead
+        enc_motion_times += torch.clip(self._motion_lib._motion_lengths[motion_ids], max=enc_window_size)
+
+        enc_amp_obs_demo = self.build_amp_obs_demo(motion_ids, enc_motion_times, self._num_amp_obs_enc_steps).view(-1,
+                                                                                                                   self._num_amp_obs_enc_steps,
+                                                                                                                   self._num_amp_obs_per_step)
+
+        enc_amp_obs_demo_flat = enc_amp_obs_demo.to(self.device).view(-1, self.get_num_enc_amp_obs())
+
+        return motion_ids, enc_motion_times, enc_amp_obs_demo_flat
+
+    def fetch_amp_obs_demo_enc_pair(self, num_samples):
+        motion_ids = self._motion_lib.sample_motions(num_samples)
+
+        # since negative times are added to these values in build_amp_obs_demo,
+        # we shift them into the range [0 + truncate_time, end of clip]
+        enc_window_size = self.dt * (self._num_amp_obs_enc_steps - 1)
+
+        enc_motion_times = self._motion_lib.sample_time(motion_ids, truncate_time=enc_window_size)
+        # make sure not to add more than motion clip length, negative amp_obs will show zero index amp_obs instead
+        enc_motion_times += torch.clip(self._motion_lib._motion_lengths[motion_ids], max=enc_window_size)
+
+        # sub-window-size is for the amp_obs contained within the enc-amp-obs. make sure we sample only within the valid portion of the motion
+        sub_window_size = torch.clip(self._motion_lib._motion_lengths[motion_ids], max=enc_window_size) - self.dt * self._num_amp_obs_steps
+        motion_times = enc_motion_times - torch.rand(enc_motion_times.shape, device=self.device) * sub_window_size
+
+        enc_amp_obs_demo = self.build_amp_obs_demo(motion_ids, enc_motion_times, self._num_amp_obs_enc_steps).view(-1, self._num_amp_obs_enc_steps, self._num_amp_obs_per_step)
+        amp_obs_demo = self.build_amp_obs_demo(motion_ids, motion_times, self._num_amp_obs_steps).view(-1, self._num_amp_obs_steps, self._num_amp_obs_per_step)
+
+        enc_amp_obs_demo_flat = enc_amp_obs_demo.to(self.device).view(-1, self.get_num_enc_amp_obs())
+        amp_obs_demo_flat = amp_obs_demo.to(self.device).view(-1, self.get_num_amp_obs())
+
+        return motion_ids, enc_motion_times, enc_amp_obs_demo_flat, motion_times, amp_obs_demo_flat
+
+    def fetch_amp_obs_demo_pair(self, num_samples):
+        motion_ids = self._motion_lib.sample_motions(num_samples)
+        cat_motion_ids = torch.cat((motion_ids, motion_ids), dim=0)
+
+        # since negative times are added to these values in build_amp_obs_demo,
+        # we shift them into the range [0 + truncate_time, end of clip]
+        enc_window_size = self.dt * (self._num_amp_obs_enc_steps - 1)
+
+        motion_times0 = self._motion_lib.sample_time(motion_ids, truncate_time=enc_window_size)
+        motion_times0 += torch.clip(self._motion_lib._motion_lengths[motion_ids], max=enc_window_size)
+
+        motion_times1 = motion_times0 + torch.rand(motion_times0.shape, device=self.device) * 0.5
+        motion_times1 = torch.min(motion_times1, self._motion_lib._motion_lengths[motion_ids])
+
+        motion_times = torch.cat((motion_times0, motion_times1), dim=0)
+
+        amp_obs_demo = self.build_amp_obs_demo(cat_motion_ids, motion_times, self._num_amp_obs_enc_steps).view(-1, self._num_amp_obs_enc_steps, self._num_amp_obs_per_step)
+        amp_obs_demo0, amp_obs_demo1 = torch.split(amp_obs_demo, num_samples)
+
+        amp_obs_demo0_flat = amp_obs_demo0.to(self.device).view(-1, self.get_num_enc_amp_obs())
+
+        amp_obs_demo1_flat = amp_obs_demo1.to(self.device).view(-1, self.get_num_enc_amp_obs())
+
+        return motion_ids, motion_times0, amp_obs_demo0_flat, motion_times1, amp_obs_demo1_flat
 
     def _build_amp_obs_demo_buf(self, num_samples):
         self._amp_obs_demo_buf = torch.zeros((num_samples, self._num_amp_obs_steps, self._num_amp_obs_per_step), device=self.device, dtype=torch.float32)
+        self._enc_amp_obs_demo_buf = torch.zeros((num_samples, self._num_amp_obs_enc_steps, self._num_amp_obs_per_step), device=self.device, dtype=torch.float32)
         return
         
     def _setup_character_props(self, key_bodies):

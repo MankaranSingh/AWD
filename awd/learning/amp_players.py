@@ -53,8 +53,7 @@ class AMPPlayerContinuous(common_player.CommonPlayer):
         super()._build_net(config)
         
         if self._normalize_amp_input:
-            self._amp_input_mean_std = RunningMeanStd(config['amp_input_shape']).to(self.device)
-            self._amp_input_mean_std.eval()  
+            self._amp_input_mean_std = RunningMeanStd((self._amp_observation_space.shape[0] // self.vec_env.env.task._num_amp_obs_steps,)).to(self.ppo_device)
         
         return
 
@@ -66,10 +65,14 @@ class AMPPlayerContinuous(common_player.CommonPlayer):
 
     def _build_net_config(self):
         config = super()._build_net_config()
-        if (hasattr(self, 'env')):
+        if hasattr(self, 'env'):
             config['amp_input_shape'] = self.env.amp_observation_space.shape
+            config['amp_obs_steps'] = self.env.task._num_amp_obs_steps
         else:
             config['amp_input_shape'] = self.env_info['amp_observation_space']
+            config['amp_obs_steps'] = self.env_info['num_amp_obs_steps']
+
+        self._amp_observation_space = config['amp_input_shape']
         return config
 
     def _amp_debug(self, info):
@@ -88,7 +91,10 @@ class AMPPlayerContinuous(common_player.CommonPlayer):
 
     def _preproc_amp_obs(self, amp_obs):
         if self._normalize_amp_input:
+            shape = amp_obs.shape
+            amp_obs = amp_obs.view(-1, self.vec_env.env.amp_observation_space.shape[0] // self.vec_env.env.task._num_amp_obs_steps)
             amp_obs = self._amp_input_mean_std(amp_obs)
+            amp_obs = amp_obs.view(shape)
         return amp_obs
 
     def _eval_disc(self, amp_obs):

@@ -51,6 +51,11 @@ from learning import awd_players
 from learning import awd_models
 from learning import awd_network_builder
 
+from learning import calm_agent
+from learning import calm_players
+from learning import calm_models
+from learning import calm_network_builder
+
 from learning import hrl_agent
 from learning import hrl_players
 from learning import hrl_models
@@ -163,6 +168,7 @@ class RLGPUEnv(vecenv.IVecEnv):
         info['action_space'] = self.env.action_space
         info['observation_space'] = self.env.observation_space
         info['amp_observation_space'] = self.env.amp_observation_space
+        info['enc_amp_observation_space'] = self.env.enc_amp_observation_space
 
         if self.use_global_obs:
             info['state_space'] = self.env.state_space
@@ -189,6 +195,11 @@ def build_alg_runner(algo_observer):
     runner.player_factory.register_builder('awd', lambda **kwargs : awd_players.AWDPlayer(**kwargs))
     runner.model_builder.model_factory.register_builder('awd', lambda network, **kwargs : awd_models.ModelAWDContinuous(network))  
     runner.model_builder.network_factory.register_builder('awd', lambda **kwargs : awd_network_builder.AWDBuilder())
+
+    runner.algo_factory.register_builder('calm', lambda **kwargs : calm_agent.CALMAgent(**kwargs))
+    runner.player_factory.register_builder('calm', lambda **kwargs : calm_players.CALMPlayer(**kwargs))
+    runner.model_builder.model_factory.register_builder('calm', lambda network, **kwargs : calm_models.ModelCALMContinuous(network))  
+    runner.model_builder.network_factory.register_builder('calm', lambda **kwargs : calm_network_builder.CALMBuilder())
     
     runner.algo_factory.register_builder('hrl', lambda **kwargs : hrl_agent.HRLAgent(**kwargs))
     runner.player_factory.register_builder('hrl', lambda **kwargs : hrl_players.HRLPlayer(**kwargs))

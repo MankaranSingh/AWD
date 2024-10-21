@@ -375,6 +375,7 @@ class AWDAgent(amp_agent.AMPAgent):
     def _build_net_config(self):
         config = super()._build_net_config()
         config['awd_latent_shape'] = (self._latent_dim,)
+        config['amp_obs_steps'] = self.vec_env.env.task._num_amp_obs_steps
         return config
 
     def _reset_latents(self, env_ids):

@@ -51,7 +51,7 @@ class AMPAgent(common_agent.CommonAgent):
         super().__init__(base_name, config)
 
         if self._normalize_amp_input:
-            self._amp_input_mean_std = RunningMeanStd(self._amp_observation_space.shape).to(self.ppo_device)
+            self._amp_input_mean_std = RunningMeanStd((self._amp_observation_space.shape[0] // self.vec_env.env.task._num_amp_obs_steps,)).to(self.ppo_device)
 
         return
 
@@ -547,6 +547,7 @@ class AMPAgent(common_agent.CommonAgent):
     def _build_net_config(self):
         config = super()._build_net_config()
         config['amp_input_shape'] = self._amp_observation_space.shape
+        config['amp_obs_steps'] = self.vec_env.env.task._num_amp_obs_steps
         return config
     
     def _build_rand_action_probs(self):
@@ -663,7 +664,10 @@ class AMPAgent(common_agent.CommonAgent):
 
     def _preproc_amp_obs(self, amp_obs):
         if self._normalize_amp_input:
+            shape = amp_obs.shape
+            amp_obs = amp_obs.view(-1, self.vec_env.env.amp_observation_space.shape[0] // self.vec_env.env.task._num_amp_obs_steps)
             amp_obs = self._amp_input_mean_std(amp_obs)
+            amp_obs = amp_obs.view(shape)
         return amp_obs
 
     def _combine_rewards(self, task_rewards, amp_rewards):
