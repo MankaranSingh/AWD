@@ -24,8 +24,8 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [512, 256]
-      activation: relu
+      units: [1024, 512]
+      activation: tanh
       d2rl: False
 
       initializer:

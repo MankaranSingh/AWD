@@ -143,6 +143,7 @@ class Duckling(BaseTask):
         self.num_steps_per_period = int(self.period / self.dt)
 
         self.velocities_history = torch.zeros(self.num_envs, 6 * self.num_steps_per_period, dtype=torch.float, device=self.device, requires_grad=False)
+        self.avg_velocities = torch.zeros(self.num_envs, 6, dtype=torch.float, device=self.device, requires_grad=False)
 
         self.gravity_vec = to_torch(
             get_axis_params(-1.0, self.up_axis_idx), device=self.device
@@ -214,6 +215,8 @@ class Duckling(BaseTask):
         self._terminate_buf[env_ids] = 0
         self.feet_air_time[env_ids] = 0
         self.last_actions[env_ids] = 0.
+        self.actions[env_ids] = 0.
+        self.avg_velocities[env_ids] = 0.
         return
 
     def _create_ground_plane(self):
@@ -535,7 +538,7 @@ class Duckling(BaseTask):
                                                 self._dof_pos, self._dof_vel, key_body_pos,
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
-                                                self.projected_gravity, self.actions)
+                                                self.projected_gravity, self.actions, self.last_actions)
         else:
             key_body_pos = self._rigid_body_pos[:, self._key_body_ids, :]
             obs = compute_duckling_observations(self._rigid_body_pos[env_ids][:, 0, :],
@@ -545,7 +548,7 @@ class Duckling(BaseTask):
                                                 self._dof_pos[env_ids], self._dof_vel[env_ids], key_body_pos[env_ids],
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
-                                                self.projected_gravity[env_ids], self.actions[env_ids])        
+                                                self.projected_gravity[env_ids], self.actions[env_ids], self.last_actions[env_ids])        
         # obs = compute_duckling_observations_max(body_pos, body_rot, body_vel, body_ang_vel, self._local_root_obs,
         #                                         self._root_height_obs)
 
@@ -602,6 +605,8 @@ class Duckling(BaseTask):
         self._compute_observations()
         self._compute_reward(self.actions)
         self._compute_reset()
+
+        self.last_actions[:] = self.actions[:]
         
         self.extras["terminate"] = self._terminate_buf
 
@@ -735,8 +740,9 @@ def compute_duckling_observations(
     dof_axis,
     projected_gravity,
     actions,
+    last_actions,
 ):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor) -> Tensor
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor, Tensor) -> Tensor
     # realistic observations
 
     obs = torch.cat(
@@ -745,6 +751,7 @@ def compute_duckling_observations(
             dof_pos,
             dof_vel,
             actions,
+            last_actions,
         ),
         dim=-1,
     )

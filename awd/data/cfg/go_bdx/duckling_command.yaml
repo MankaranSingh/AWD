@@ -37,7 +37,7 @@ env:
     linearVelocityXYRewardScale: 1.0
     angularVelocityZRewardScale: 0.5
     torqueRewardScale: 0.0
-    feetAirTimeRewardScale: 0.1
+    feetAirTimeRewardScale: 0.01
     actionRateRewardScale: -0.01
 
     # normalization
@@ -46,9 +46,9 @@ env:
     useAverageVelocities: True
 
   randomCommandVelocityRanges:
-    linear_x: [-0.45, 0.45] # min max [m/s]
-    linear_y: [-0.4, 0.4]   # min max [m/s]
-    yaw: [-0.8, 0.8]          # min max [rad/s]
+    linear_x: [-0.3, 0.3] # min max [m/s]
+    linear_y: [-0.25, 0.25]   # min max [m/s]
+    yaw: [-0.3, 0.3]          # min max [rad/s]
 
 sim:
   substeps: 2
