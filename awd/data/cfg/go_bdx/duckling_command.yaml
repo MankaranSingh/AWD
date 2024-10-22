@@ -10,7 +10,7 @@ env:
   powerScale: 1.0
   controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid"
-  hybridInitProb: 0.2
+  hybridInitProb: 0.5
   numAMPObsSteps: 10
   
   localRootObs: True
@@ -37,7 +37,7 @@ env:
     linearVelocityXYRewardScale: 1.0
     angularVelocityZRewardScale: 0.5
     torqueRewardScale: 0.0
-    feetAirTimeRewardScale: 0.01
+    feetAirTimeRewardScale: 0.1
     actionRateRewardScale: -0.01
 
     # normalization
@@ -46,9 +46,9 @@ env:
     useAverageVelocities: True
 
   randomCommandVelocityRanges:
-    linear_x: [-0.3, 0.3] # min max [m/s]
-    linear_y: [-0.2, 0.2]   # min max [m/s]
-    yaw: [-0.3, 0.3]          # min max [rad/s]
+    linear_x: [-0.45, 0.45] # min max [m/s]
+    linear_y: [-0.4, 0.4]   # min max [m/s]
+    yaw: [-0.8, 0.8]          # min max [rad/s]
 
 sim:
   substeps: 2

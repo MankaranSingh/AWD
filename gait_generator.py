@@ -368,9 +368,11 @@ while True:
 
     i += 1
 
-mean_avg_x_lin_vel = np.around(np.mean(avg_x_lin_vel), 4)
-mean_avg_y_lin_vel = np.around(np.mean(avg_y_lin_vel), 4)
-mean_yaw_vel = np.around(np.mean(avg_yaw_vel), 4)
+# skip first 2 seconds to get better average speed
+mean_avg_x_lin_vel = np.around(np.mean(avg_x_lin_vel[240:]), 4)
+mean_avg_y_lin_vel = np.around(np.mean(avg_y_lin_vel[240:]), 4)
+mean_yaw_vel = np.around(np.mean(avg_yaw_vel[240:]), 4)
+
 print("recorded", len(episode["Frames"]), "frames")
 print(f"avg lin_vel_x {mean_avg_x_lin_vel}")
 print(f"avg lin_vel_y {mean_avg_y_lin_vel}")
@@ -403,6 +405,10 @@ episode["Placo"] =  {
     "walk_max_dy": pwe.parameters.walk_max_dy,
     "walk_max_dx_forward": pwe.parameters.walk_max_dx_forward,
     "walk_max_dx_backward": pwe.parameters.walk_max_dx_backward,
+    "avg_x_lin_vel": mean_avg_x_lin_vel,
+    "avg_y_lin_vel": mean_avg_y_lin_vel,
+    "avg_yaw_vel": mean_yaw_vel,
+    "preset_name": args.preset.split("/")[-1].split(".")[0],
 }
 
 file_name = args.name + str(".json")

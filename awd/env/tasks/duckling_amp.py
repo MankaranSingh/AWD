@@ -340,8 +340,8 @@ def build_amp_observations(root_pos, root_rot, root_vel, root_ang_vel, dof_pos, 
     local_root_vel = quat_rotate(heading_rot, root_vel)
     local_root_ang_vel = quat_rotate(heading_rot, root_ang_vel)
 
-    dof_obs = dof_to_obs(dof_pos, dof_obs_size, dof_offsets, dof_axis)
-    
+    #dof_obs = dof_to_obs(dof_pos, dof_obs_size, dof_offsets, dof_axis)
+    dof_obs = dof_pos
     root_pos_expand = root_pos.unsqueeze(-2)
     local_key_body_pos = key_body_pos - root_pos_expand
 

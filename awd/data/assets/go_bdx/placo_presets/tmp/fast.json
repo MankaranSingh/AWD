@@ -1,6 +1,6 @@
 {
-    "dx": -0.1,
-    "dy": -0.1,
+    "dx": -0.6,
+    "dy": -0.03,
     "dtheta": 0.0,
     "duration": 2,
     "hardware": true,
