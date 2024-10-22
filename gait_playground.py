@@ -42,6 +42,7 @@ parser.add_argument("--walk_max_dx_forward", type=float, default=None)
 parser.add_argument("--walk_max_dx_backward", type=float, default=None)
 parser.add_argument("-l", "--length", type=int, default=10)
 parser.add_argument("--mini", action="store_true", default=False)
+parser.add_argument("--preset", type=str, help="Path to the preset file")
 args = parser.parse_args()
 
 app = Flask(__name__)
@@ -189,9 +190,12 @@ if __name__ == '__main__':
     print('exit')
 
 gait = GaitParameters()
-filename = gait.custom_preset_name()
-if not os.path.exists(filename):
-    filename = os.path.join(gait.asset_path, "placo_defaults.json")
+if args.preset:
+    filename = args.preset
+else:
+    filename = gait.custom_preset_name()
+    if not os.path.exists(filename):
+        filename = os.path.join(gait.asset_path, "placo_defaults.json")
 with open(filename, 'r') as f:
     gait_parameters = json.load(f)
     print(f"gait_parameters {gait_parameters}")
