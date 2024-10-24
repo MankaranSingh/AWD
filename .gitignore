@@ -11,4 +11,4 @@ anim.npy
 sim.npy
 motions/
 stuff
-
+awd/data/motions/*

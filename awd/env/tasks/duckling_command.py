@@ -27,7 +27,8 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
 
         # reward scales
         self.rew_scales = {}
-        self.rew_scales["lin_vel_xy"] = self.cfg["env"]["learn"]["linearVelocityXYRewardScale"]
+        self.rew_scales["lin_vel_x"] = self.cfg["env"]["learn"]["linearVelocityXYRewardScale"][0]
+        self.rew_scales["lin_vel_y"] = self.cfg["env"]["learn"]["linearVelocityXYRewardScale"][1]
         self.rew_scales["ang_vel_z"] = self.cfg["env"]["learn"]["angularVelocityZRewardScale"]
         self.rew_scales["torque"] = self.cfg["env"]["learn"]["torqueRewardScale"]
         self.rew_scales["air_time"] = self.cfg["env"]["learn"]["feetAirTimeRewardScale"]
@@ -67,7 +68,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.commands_y = self.commands.view(self.num_envs, 3)[..., 1]
         self.commands_x = self.commands.view(self.num_envs, 3)[..., 0]
         self.commands_yaw = self.commands.view(self.num_envs, 3)[..., 2]
-        self.commands_scale = torch.tensor([self.lin_vel_scale, self.lin_vel_scale, self.ang_vel_scale], requires_grad=False, device=self.commands.device)
+        self.commands_scale = torch.tensor([self.lin_vel_scale[0], self.lin_vel_scale[1], self.ang_vel_scale], requires_grad=False, device=self.commands.device)
         self.default_dof_pos = torch.zeros_like(self.dof_pos, dtype=torch.float, device=self.device, requires_grad=False)
         
         return
@@ -162,15 +163,17 @@ def compute_task_reward(
         base_ang_vel = quat_rotate_inverse(base_quat, avg_velocities[:, 3:])
 
     # velocity tracking reward
-    lin_vel_error = torch.sum(torch.square(commands[:, :2] - base_lin_vel[:, :2]), dim=1)
-    ang_vel_error = torch.sum(torch.square(commands[:, 2] - base_ang_vel[:, 2]))
-    rew_lin_vel_xy = torch.exp(-lin_vel_error/0.25) * rew_scales["lin_vel_xy"]
+    lin_vel_error_x = torch.square(commands[:, 0] - base_lin_vel[:, 0])
+    lin_vel_error_y = torch.square(commands[:, 1] - base_lin_vel[:, 1])
+    ang_vel_error = torch.square(commands[:, 2] - base_ang_vel[:, 2])
+    rew_lin_vel_x = torch.exp(-lin_vel_error_x/0.25) * rew_scales["lin_vel_x"]
+    rew_lin_vel_y = torch.exp(-lin_vel_error_y/0.25) * rew_scales["lin_vel_y"]
     rew_ang_vel_z = torch.exp(-ang_vel_error/0.25) * rew_scales["ang_vel_z"]
 
     # torque penalty
     rew_torque = torch.sum(torch.square(torques), dim=1) * rew_scales["torque"]
 
-    total_reward = rew_lin_vel_xy + rew_ang_vel_z + rew_torque
+    total_reward = rew_lin_vel_x + rew_lin_vel_y + rew_ang_vel_z + rew_torque
     total_reward = torch.clip(total_reward, 0., None)
 
     #print("task reward:", total_reward)

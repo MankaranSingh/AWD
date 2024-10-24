@@ -62,7 +62,7 @@ class CommonAgent(a2c_continuous.A2CAgent):
         self._setup_action_space()
         self.bounds_loss_coef = config.get('bounds_loss_coef', None)
         self.clip_actions = config.get('clip_actions', True)
-        self._save_intermediate = config.get('save_intermediate', False)
+        self._save_intermediate = config.get('save_intermediate', True)
 
         net_config = self._build_net_config()
         self.model = self.network.build(net_config)

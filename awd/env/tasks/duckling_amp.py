@@ -122,7 +122,7 @@ class DucklingAMP(Duckling):
         motion_ids = torch.tile(motion_ids.unsqueeze(-1), [1, self._num_amp_obs_steps])
         motion_times = motion_times0.unsqueeze(-1)
         time_steps = -dt * torch.arange(0, self._num_amp_obs_steps, device=self.device)
-        motion_times = motion_times + time_steps
+        motion_times = torch.clip(motion_times + time_steps, min=0)
 
         motion_ids = motion_ids.view(-1)
         motion_times = motion_times.view(-1)
