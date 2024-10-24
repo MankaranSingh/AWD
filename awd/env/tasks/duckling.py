@@ -63,6 +63,9 @@ class Duckling(BaseTask):
         self._enable_early_termination = self.cfg["env"]["enableEarlyTermination"]
         
         key_bodies = self.cfg["env"]["keyBodies"]
+        contact_bodies = self.cfg["env"]["contactBodies"]
+        mask_joints = self.cfg["env"].get("maskJoints", [])
+        self._mask_joint_random_range = self.cfg["env"].get("maskJointRandomRange", [0.0, 0.0])
         self._setup_character_props(key_bodies)
 
         self.cfg["env"]["numObservations"] = self.get_obs_size()
@@ -130,9 +133,13 @@ class Duckling(BaseTask):
         
         self._build_termination_heights()
         
-        contact_bodies = self.cfg["env"]["contactBodies"]
         self._key_body_ids = self._build_key_body_ids_tensor(key_bodies)
         self._contact_body_ids = self._build_contact_body_ids_tensor(contact_bodies)
+        self._mask_joint_ids = None
+        self._mask_joint_values = None
+        if len(mask_joints) > 0:
+            self._mask_joint_ids, self._joint_ids = self._build_mask_joint_ids_tensor(mask_joints, self._joints)
+            self._mask_joint_values = torch_rand_float(self._mask_joint_random_range[0], self._mask_joint_random_range[1], (self.num_envs, len(self._mask_joint_ids)), device=self.device).squeeze()
 
         self.last_contacts = torch.zeros(self.num_envs, len(self._key_body_ids), dtype=torch.bool, device=self.device, requires_grad=False)
         self.feet_air_time = torch.zeros(self.num_envs, self._key_body_ids.shape[0], dtype=torch.float, device=self.device, requires_grad=False)
@@ -254,7 +261,6 @@ class Duckling(BaseTask):
 
     def _build_termination_heights(self):
         head_term_height = 0.3
-        shield_term_height = 0.32
 
         termination_height = self.cfg["env"]["terminationHeight"]
         self._termination_heights = np.array([termination_height] * self.num_bodies)
@@ -262,11 +268,6 @@ class Duckling(BaseTask):
         head_id = self.gym.find_actor_rigid_body_handle(self.envs[0], self.duckling_handles[0], "head")
         self._termination_heights[head_id] = max(head_term_height, self._termination_heights[head_id])
 
-        asset_file = self._get_asset_file_name()
-        # if (asset_file == "mjcf/amp_duckling_sword_shield.xml"):
-        #     left_arm_id = self.gym.find_actor_rigid_body_handle(self.envs[0], self.duckling_handles[0], "left_lower_arm")
-        #     self._termination_heights[left_arm_id] = max(shield_term_height, self._termination_heights[left_arm_id])
-        
         self._termination_heights = to_torch(self._termination_heights, device=self.device)
         return
 
@@ -566,12 +567,15 @@ class Duckling(BaseTask):
         self._duckling_root_states[env_ids] = self._initial_duckling_root_states[env_ids]
         self._dof_pos[env_ids] = self._initial_dof_pos[env_ids]
         self._dof_vel[env_ids] = self._initial_dof_vel[env_ids]
+
         return
 
     def pre_physics_step(self, actions):
         self.actions = actions.to(self.device).clone()
         if (self._pd_control):
             pd_tar = self._action_to_pd_targets(self.actions)
+            if self._mask_joint_values is not None:
+                pd_tar[:, self._mask_joint_ids] = self._mask_joint_values
             pd_tar_tensor = gymtorch.unwrap_tensor(pd_tar)
             self.gym.set_dof_position_target_tensor(self.sim, pd_tar_tensor)
         else:
@@ -648,6 +652,26 @@ class Duckling(BaseTask):
 
         body_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
         return body_ids
+
+    def _build_mask_joint_ids_tensor(self, mask_joints, all_joints):
+        env_ptr = self.envs[0]
+        actor_handle = self.duckling_handles[0]
+        mask_joint_ids = []
+        joint_ids = []
+        for joint_name in mask_joints:
+            joint_id = self.gym.find_actor_dof_handle(env_ptr, actor_handle, joint_name)
+            assert(joint_id != -1)
+            mask_joint_ids.append(joint_id)
+        
+        for joint_name in all_joints:
+            if joint_name not in mask_joints:
+                joint_id = self.gym.find_actor_dof_handle(env_ptr, actor_handle, joint_name)
+                assert(joint_id != -1)
+                joint_ids.append(joint_id)
+
+        mask_joint_ids = to_torch(mask_joint_ids, device=self.device, dtype=torch.long)
+        joint_ids = to_torch(joint_ids, device=self.device, dtype=torch.long)
+        return mask_joint_ids, joint_ids
 
     def _action_to_pd_targets(self, action):
         pd_tar = self._pd_action_offset + self._pd_action_scale * action

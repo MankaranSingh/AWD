@@ -129,9 +129,8 @@ class DucklingAMP(Duckling):
         root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
                = self._motion_lib.get_motion_state(motion_ids, motion_times)
         amp_obs_demo = build_amp_observations(root_pos, root_rot, root_vel, root_ang_vel,
-                                              dof_pos, dof_vel, key_pos,
-                                              self._local_root_obs, self._root_height_obs,
-                                              self._dof_obs_size, self._dof_offsets, self._dof_axis_array)
+                                              dof_pos[:, self._joint_ids], dof_vel[:, self._joint_ids], key_pos,
+                                              self._local_root_obs, self._root_height_obs)
         return amp_obs_demo
 
     def _build_amp_obs_demo_buf(self, num_samples):
@@ -177,6 +176,9 @@ class DucklingAMP(Duckling):
             self._reset_hybrid_state_init(env_ids)
         else:
             assert(False), "Unsupported state initialization strategy: {:s}".format(str(self._state_init))
+        
+        if self._mask_joint_values is not None:
+            self._mask_joint_values[env_ids] = torch_rand_float(self._mask_joint_random_range[0], self._mask_joint_random_range[1], (len(env_ids), len(self._mask_joint_ids)), device=self.device).squeeze()
         return
     
     def _reset_default(self, env_ids):
@@ -261,9 +263,8 @@ class DucklingAMP(Duckling):
         root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
                = self._motion_lib.get_motion_state(motion_ids, motion_times)
         amp_obs_demo = build_amp_observations(root_pos, root_rot, root_vel, root_ang_vel, 
-                                              dof_pos, dof_vel, key_pos, 
-                                              self._local_root_obs, self._root_height_obs, 
-                                              self._dof_obs_size, self._dof_offsets, self._dof_axis_array)
+                                              dof_pos[:, self._joint_ids], dof_vel[:, self._joint_ids], key_pos, 
+                                              self._local_root_obs, self._root_height_obs)
         self._hist_amp_obs_buf[env_ids] = amp_obs_demo.view(self._hist_amp_obs_buf[env_ids].shape)
         return
     
@@ -301,17 +302,15 @@ class DucklingAMP(Duckling):
                                                                self._rigid_body_rot[:, 0, :],
                                                                self._rigid_body_vel[:, 0, :],
                                                                self._rigid_body_ang_vel[:, 0, :],
-                                                               self._dof_pos, self._dof_vel, key_body_pos,
-                                                               self._local_root_obs, self._root_height_obs, 
-                                                               self._dof_obs_size, self._dof_offsets, self._dof_axis_array)
+                                                               self._dof_pos[:, self._joint_ids], self._dof_vel[:, self._joint_ids], key_body_pos,
+                                                               self._local_root_obs, self._root_height_obs)
         else:
             self._curr_amp_obs_buf[env_ids] = build_amp_observations(self._rigid_body_pos[env_ids][:, 0, :],
                                                                    self._rigid_body_rot[env_ids][:, 0, :],
                                                                    self._rigid_body_vel[env_ids][:, 0, :],
                                                                    self._rigid_body_ang_vel[env_ids][:, 0, :],
-                                                                   self._dof_pos[env_ids], self._dof_vel[env_ids], key_body_pos[env_ids],
-                                                                   self._local_root_obs, self._root_height_obs, 
-                                                                   self._dof_obs_size, self._dof_offsets, self._dof_axis_array)
+                                                                   self._dof_pos[env_ids][:, self._joint_ids], self._dof_vel[env_ids][:, self._joint_ids], key_body_pos[env_ids],
+                                                                   self._local_root_obs, self._root_height_obs)
         return
 
 
@@ -321,8 +320,8 @@ class DucklingAMP(Duckling):
 
 @torch.jit.script
 def build_amp_observations(root_pos, root_rot, root_vel, root_ang_vel, dof_pos, dof_vel, key_body_pos, 
-                           local_root_obs, root_height_obs, dof_obs_size, dof_offsets, dof_axis):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int]) -> Tensor
+                           local_root_obs, root_height_obs):
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool) -> Tensor
     root_h = root_pos[:, 2:3]
     heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
 

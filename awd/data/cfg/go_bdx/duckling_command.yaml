@@ -16,6 +16,8 @@ env:
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
   contactBodies: ["left_foot_link", "right_foot_link"]
+  maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw', 'head_roll', 'left_antenna', 'right_antenna']
+  maskJointRandomRange: [-0.8, 0.8]
   terminationHeight: -0.05
   enableEarlyTermination: True
   enableTaskObs: True
