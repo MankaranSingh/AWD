@@ -2,7 +2,7 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 500
+  episodeLength: 300
   isFlagrun: False
   enableDebugVis: False
   
@@ -17,10 +17,11 @@ env:
   keyBodies: ["left_foot", "right_foot"]
   contactBodies: ["left_foot_link", "right_foot_link"]
   maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw', 'head_roll', 'left_antenna', 'right_antenna']
-  maskJointRandomRange: [-0.8, 0.8]
+  maskJointRandomRange: [-0.5, 0.5]
   terminationHeight: -0.05
   enableEarlyTermination: True
   enableTaskObs: True
+  randomizeMaskJoints: False
   commandChangeStepsMin: 1000
   commandChangeStepsMax: 1001
   period: 0.84
@@ -38,9 +39,9 @@ env:
     # rewards
     linearVelocityXYRewardScale: [1.0, 0.5]
     angularVelocityZRewardScale: 0.5
-    torqueRewardScale: -0.01
-    feetAirTimeRewardScale: 0.2
-    actionRateRewardScale: -0.01
+    torqueRewardScale: -0.001
+    feetAirTimeRewardScale: 0.1
+    actionRateRewardScale: -0.005
 
     # normalization
     linearVelocityScale: [2.0, 1.0]
@@ -50,7 +51,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.8, 0.8] # min max [m/s]
     linear_y: [-0.5, 0.5]   # min max [m/s]
-    yaw: [-0.8, 0.8]          # min max [rad/s]
+    yaw: [-0.0, 0.0]          # min max [rad/s]
 
 sim:
   substeps: 2

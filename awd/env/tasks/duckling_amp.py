@@ -177,7 +177,7 @@ class DucklingAMP(Duckling):
         else:
             assert(False), "Unsupported state initialization strategy: {:s}".format(str(self._state_init))
         
-        if self._mask_joint_values is not None:
+        if self._mask_joint_values is not None and self._randomize_mask_joints:
             self._mask_joint_values[env_ids] = torch_rand_float(self._mask_joint_random_range[0], self._mask_joint_random_range[1], (len(env_ids), len(self._mask_joint_ids)), device=self.device).squeeze()
         return
     

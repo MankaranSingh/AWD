@@ -60,6 +60,7 @@ class Duckling(BaseTask):
         self.max_episode_length = self.cfg["env"]["episodeLength"]
         self._local_root_obs = self.cfg["env"]["localRootObs"]
         self._root_height_obs = self.cfg["env"].get("rootHeightObs", True)
+        self._randomize_mask_joints = self.cfg["env"].get("randomizeMaskJoints", False)
         self._enable_early_termination = self.cfg["env"]["enableEarlyTermination"]
         
         key_bodies = self.cfg["env"]["keyBodies"]
@@ -139,8 +140,11 @@ class Duckling(BaseTask):
         self._mask_joint_values = None
         if len(mask_joints) > 0:
             self._mask_joint_ids, self._joint_ids = self._build_mask_joint_ids_tensor(mask_joints, self._joints)
-            self._mask_joint_values = torch_rand_float(self._mask_joint_random_range[0], self._mask_joint_random_range[1], (self.num_envs, len(self._mask_joint_ids)), device=self.device).squeeze()
-
+            if self._randomize_mask_joints:
+                self._mask_joint_values = torch_rand_float(self._mask_joint_random_range[0], self._mask_joint_random_range[1], (self.num_envs, len(self._mask_joint_ids)), device=self.device).squeeze()
+            else:
+                self._mask_joint_values = torch.zeros(self.num_envs, len(self._mask_joint_ids), device=self.device)
+                
         self.last_contacts = torch.zeros(self.num_envs, len(self._key_body_ids), dtype=torch.bool, device=self.device, requires_grad=False)
         self.feet_air_time = torch.zeros(self.num_envs, self._key_body_ids.shape[0], dtype=torch.float, device=self.device, requires_grad=False)
         self.actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
