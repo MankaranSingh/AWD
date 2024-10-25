@@ -51,7 +51,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.8, 0.8] # min max [m/s]
     linear_y: [-0.5, 0.5]   # min max [m/s]
-    yaw: [-0.0, 0.0]          # min max [rad/s]
+    yaw: [-0.8, 0.8]          # min max [rad/s]
 
 sim:
   substeps: 2

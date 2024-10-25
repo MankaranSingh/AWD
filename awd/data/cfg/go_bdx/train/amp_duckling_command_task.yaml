@@ -54,8 +54,9 @@ params:
     normalize_advantage: True
     gamma: 0.95
     tau: 0.95
-    learning_rate: 4e-5
-    lr_schedule: constant
+    learning_rate: 4e-5 # overwritten if adaptive lr_schedule
+    lr_schedule: adaptive # constant
+    kl_threshold: 0.008 # target kl for adaptive lr
     score_to_win: 20000
     max_epochs: 100000
     save_best_after: 50
@@ -63,7 +64,7 @@ params:
     save_intermediate: True
     print_stats: True
     grad_norm: 1.0
-    entropy_coef: 0.0
+    entropy_coef: 0
     truncate_grads: False
     ppo: True
     e_clip: 0.2
