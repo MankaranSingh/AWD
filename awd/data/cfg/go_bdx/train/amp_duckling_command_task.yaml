@@ -65,16 +65,16 @@ params:
     print_stats: True
     grad_norm: 1.0
     entropy_coef: 0.001
-    truncate_grads: True
+    truncate_grads: False
     ppo: True
     e_clip: 0.2
     horizon_length: 32
     minibatch_size: 16384
     mini_epochs: 6
-    critic_coef: 2
-    clip_value: True
+    critic_coef: 5
+    clip_value: False
     seq_len: 4
-    bounds_loss_coef: 2
+    bounds_loss_coef: 10
     amp_obs_demo_buffer_size: 200000
     amp_replay_buffer_size: 200000
     amp_replay_keep_prob: 0.01
