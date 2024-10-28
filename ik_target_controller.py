@@ -64,6 +64,9 @@ if "trunk" in target_frame_name:
 else:
     solver.mask_fbase(True)
 
+# Adding a custom regularization task
+regularization_task = solver.add_regularization_task(1e-4)
+
 effector_task = solver.add_frame_task(target_frame_name, np.eye(4))
 effector_task.configure(target_frame_name, "soft", 1.0, 1.0)
 
@@ -87,7 +90,6 @@ threading.Timer(1, open_browser).start()
 
 default_head_transform = robot.get_T_world_frame(target_frame_name)
 
-print(default_head_transform)
 
 # Retrieving initial position of the feet, com and trunk orientation
 T_world_left = robot.get_T_world_frame("left_foot")
@@ -114,14 +116,14 @@ def loop():
     # Updating the target
     head_target = default_head_transform.copy()
     # linear_range = [-0.02, 0.02] # forward/backward [m]
-    linear_range = [-0.06, 0.06] # up/down [m]
+    linear_range = [-0.04, 0.01] # up/down [m]
 
     # linear_range = [-10, 10] # roll [deg]
     # linear_range = [-15, 15] # pitch [deg]
     # linear_range = [-12, 12] # yaw [deg]
 
-    head_target[2, 3] += np.clip(0.15*np.sin(t), linear_range[0], linear_range[1])
-    # head_target = rotate_matrix(head_target, np.clip(15*np.sin(t), linear_range[0], linear_range[1]), "z")
+    head_target[0, 3] += np.clip(0.15*np.sin(t), linear_range[0], linear_range[1])
+    head_target = rotate_matrix(head_target, np.clip(15*np.sin(t), -10, 10), "y")
     # head_target = rotate_matrix(head_target, np.clip(15*np.sin(t), linear_range[0], linear_range[1]), "y")
     # head_target = rotate_matrix(head_target, np.clip(15*np.sin(t), linear_range[0], linear_range[1]), "x")
     effector_task.T_world_frame = head_target

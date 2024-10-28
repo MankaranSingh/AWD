@@ -71,6 +71,9 @@ T_world_base = robot.get_T_world_frame("trunk")
 com_task = solver.add_com_task(T_world_base[:3, 3])
 com_task.configure("com", "soft", 1.0)
 
+# Adding a custom regularization task
+regularization_task = solver.add_regularization_task(1e-4)
+
 trunk_orientation_task = solver.add_orientation_task("trunk", np.eye(3))
 trunk_orientation_task.configure("trunk_orientation", "soft", 1.0)
 
@@ -108,7 +111,7 @@ def loop():
     # Updating the com target with lateral sinusoidal trajectory
 
     #linear_range = [-0.02, 0.02] # forward/backward [m]
-    linear_range = [-0.06, 0.02] # up/down [m]
+    linear_range = [-0.03, 0.03] # up/down [m]
 
     # linear_range = [-10, 10] # roll [deg]
     # linear_range = [-15, 15] # pitch [deg]
