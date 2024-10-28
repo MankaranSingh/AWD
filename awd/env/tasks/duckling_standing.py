@@ -38,7 +38,7 @@ class DucklingStanding(DucklingAMPTask):
             self._duckling_root_states,
             self.target_root_states,
             self.rew_scales["lin_tracking"],
-            self.rew_scales["ang_tracking"]
+            self.rew_scales["ang_tracking"],
         )
 
         # self.commands[:, 2] -= 0.001
@@ -80,20 +80,20 @@ class DucklingStanding(DucklingAMPTask):
         )
         
         # Sample height commands
-        self.commands[env_ids, 2] = torch_rand_float(
-            self.command_linear_range[0],
-            self.command_linear_range[1],
-            (len(env_ids), 1),
-            device=self.device
-        ).squeeze()
-
-        # Sample pitch commands
-        # self.commands[env_ids, 4] = torch_rand_float(
-        #     self.command_angular_range[0],
-        #     self.command_angular_range[1],
+        # self.commands[env_ids, 2] = torch_rand_float(
+        #     self.command_linear_range[0],
+        #     self.command_linear_range[1],
         #     (len(env_ids), 1),
         #     device=self.device
         # ).squeeze()
+
+        # Sample pitch commands
+        self.commands[env_ids, 4] = torch_rand_float(
+            self.command_angular_range[0],
+            self.command_angular_range[1],
+            (len(env_ids), 1),
+            device=self.device
+        ).squeeze()
         
         # self.commands[env_ids, 0] = torch_rand_float(
         #     self.command_linear_range[0]/3,
@@ -106,13 +106,12 @@ class DucklingStanding(DucklingAMPTask):
         self.target_root_states[env_ids, 2] = self._initial_duckling_root_states[env_ids, 2] + self.commands[env_ids, 2]
 
         # Update target root orientation
-        # delta_quat = quat_from_euler_xyz(
-        #     self.commands[env_ids, 3],
-        #     self.commands[env_ids, 4],
-        #     self.commands[env_ids, 5]
-        # )
-        # self.target_root_states[env_ids, 3:7] = quat_mul(delta_quat, self._initial_duckling_root_states[env_ids, 3:7])
-
+        delta_quat = quat_from_euler_xyz(
+            self.commands[env_ids, 3],
+            self.commands[env_ids, 4],
+            self.commands[env_ids, 5]
+        )
+        self.target_root_states[env_ids, 3:7] = quat_mul(self._initial_duckling_root_states[env_ids, 3:7], delta_quat)
         self._command_change_steps[env_ids] = self.progress_buf[env_ids] + change_steps
 
 @torch.jit.script
@@ -120,18 +119,15 @@ def compute_standing_reward(
     duckling_root_states,
     target_root_states,
     reward_linear_scale,
-    reward_angular_scale
+    reward_angular_scale,
 ):
     # type: (Tensor, Tensor, float, float) -> Tensor
     # Compute position error
     pos_error = torch.abs(duckling_root_states[:, 2] - target_root_states[:, 2])
-    # Scale error since positions are in 0.01-0.1 range
     pos_reward = pos_error * -reward_linear_scale
 
     # Compute orientation error
-    # quat_error = quat_diff(duckling_root_states[:, 3:7], target_root_states[:, 3:7])
-    # rot_error = torch.abs(quat_error)
-    # # Scale error since rotations are in radians
-    # rot_reward = rot_error * -reward_angular_scale
-    
-    return pos_reward #+ rot_reward
+    error_quat = torch.abs(quat_diff(target_root_states[:, 3:7], duckling_root_states[:, 3:7]))
+    rot_reward = error_quat * -reward_angular_scale
+
+    return pos_reward + rot_reward

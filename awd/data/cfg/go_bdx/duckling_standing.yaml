@@ -21,7 +21,7 @@ env:
   terminationHeight: -0.1
   enableEarlyTermination: True
   enableTaskObs: True
-  randomizeMaskJoints: True
+  randomizeMaskJoints: False
   commandChangeStepsMin: 150
   commandChangeStepsMax: 200
   period: 0.84
@@ -43,7 +43,7 @@ env:
     actionRateRewardScale: -0.01
     linVelPenalizeScale: -1.0
     angVelPenalizeScale: -1.0
-    orientPenalizeScale: -1.0
+    orientPenalizeScale: -0.0
 
     # normalization
     linearScale: 1.0
