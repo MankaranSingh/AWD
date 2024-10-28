@@ -127,6 +127,8 @@ class Duckling(BaseTask):
         self._rigid_body_vel = rigid_body_state_reshaped[..., :self.num_bodies, 7:10]
         self._rigid_body_ang_vel = rigid_body_state_reshaped[..., :self.num_bodies, 10:13]
 
+        self._initial_rigid_body_pos = self._rigid_body_pos.clone()
+
         contact_force_tensor = gymtorch.wrap_tensor(contact_force_tensor)
         self._contact_forces = contact_force_tensor.view(self.num_envs, bodies_per_env, 3)[..., :self.num_bodies, :]
         
@@ -138,8 +140,8 @@ class Duckling(BaseTask):
         self._contact_body_ids = self._build_contact_body_ids_tensor(contact_bodies)
         self._mask_joint_ids = None
         self._mask_joint_values = None
+        self._mask_joint_ids, self._joint_ids = self._build_mask_joint_ids_tensor(mask_joints, self._joints)
         if len(mask_joints) > 0:
-            self._mask_joint_ids, self._joint_ids = self._build_mask_joint_ids_tensor(mask_joints, self._joints)
             if self._randomize_mask_joints:
                 self._mask_joint_values = torch_rand_float(self._mask_joint_random_range[0], self._mask_joint_random_range[1], (self.num_envs, len(self._mask_joint_ids)), device=self.device).squeeze()
             else:
@@ -160,9 +162,7 @@ class Duckling(BaseTask):
             get_axis_params(-1.0, self.up_axis_idx), device=self.device
         ).repeat((self.num_envs, 1))
 
-        self.projected_gravity = quat_rotate_inverse(
-            self._root_states[: self.num_envs, 3:7], self.gravity_vec
-        )
+        self.projected_gravity = quat_rotate_inverse(self._root_states[:, 3:7], self.gravity_vec)
         
         if self.viewer != None:
             self._init_camera()
@@ -608,6 +608,7 @@ class Duckling(BaseTask):
         # Compute average velocities for each environment
         self.avg_velocities = torch.mean(self.velocities_history_reshaped, dim=1)
 
+        self.projected_gravity = quat_rotate_inverse(self._root_states[:, 3:7], self.gravity_vec)
 
         self._refresh_sim_tensors()
         self._compute_observations()
@@ -911,7 +912,7 @@ def compute_duckling_reset(reset_buf, progress_buf, contact_buf, contact_body_id
         fall_height[:, contact_body_ids] = False
         fall_height = torch.any(fall_height, dim=-1)
 
-        has_fallen = fall_height # torch.logical_and(fall_contact, fall_height)
+        has_fallen = fall_contact # torch.logical_or(fall_contact, fall_height)
 
         # first timestep can sometimes still have nonzero contact forces
         # so only check after first couple of steps
