@@ -43,7 +43,7 @@ env:
     actionRateRewardScale: -0.01
     linVelPenalizeScale: -1.0
     angVelPenalizeScale: -1.0
-    orientPenalizeScale: -0.0
+    orientPenalizeScale: -1.0
 
     # normalization
     linearScale: 1.0
