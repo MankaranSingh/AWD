@@ -38,7 +38,7 @@ env:
   learn:
     # rewards
     linTrackingRewardScale: 10.0
-    angTrackingRewardScale: 1.0
+    angTrackingRewardScale: 10.0
     torqueRewardScale: -0.0000
     actionRateRewardScale: -0.01
     linVelPenalizeScale: -1.0
@@ -51,7 +51,7 @@ env:
     useAverageVelocities: False
 
   randomCommandRanges:
-    linear: [-0.035, 0.02] # min max [m]
+    linear: [-0.03, 0.02] # min max [m]
     angular: [-10, 10]   # min max [deg]
 
 sim:

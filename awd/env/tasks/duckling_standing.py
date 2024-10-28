@@ -41,8 +41,7 @@ class DucklingStanding(DucklingAMPTask):
             self.rew_scales["ang_tracking"],
         )
 
-        # self.commands[:, 2] -= 0.001
-        # self.commands[:, 2] = torch.clamp(self.commands[:, 2], min=-0.03)
+        #self.commands[:, 4] += 0.005
 
         # Compute velocity and orientation penalties
         rew_lin_vel = torch.sum(torch.square(self._rigid_body_vel[:, 0, :2]), dim=1) * self.rew_scales["lin_vel_penalize"]
@@ -80,18 +79,18 @@ class DucklingStanding(DucklingAMPTask):
         )
         
         # Sample height commands
-        # self.commands[env_ids, 2] = torch_rand_float(
-        #     self.command_linear_range[0],
-        #     self.command_linear_range[1],
-        #     (len(env_ids), 1),
-        #     device=self.device
-        # ).squeeze()
+        self.commands[env_ids, 2] = torch_rand_float(
+            self.command_linear_range[0],
+            self.command_linear_range[1],
+            (len(env_ids), 1),
+            device=self.device
+        ).squeeze()
 
         # Sample pitch commands
-        self.commands[env_ids, 4] = torch_rand_float(
+        self.commands[env_ids, 3:6] = torch_rand_float(
             self.command_angular_range[0],
             self.command_angular_range[1],
-            (len(env_ids), 1),
+            (len(env_ids), 3),
             device=self.device
         ).squeeze()
         
@@ -128,6 +127,7 @@ def compute_standing_reward(
 
     # Compute orientation error
     error_quat = torch.abs(quat_diff(target_root_states[:, 3:7], duckling_root_states[:, 3:7]))
-    rot_reward = error_quat * -reward_angular_scale
+    rot_reward =  reward_angular_scale / (3. * torch.abs(error_quat) + 0.01)
 
     return pos_reward + rot_reward
+
