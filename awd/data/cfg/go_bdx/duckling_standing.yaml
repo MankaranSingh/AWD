@@ -37,8 +37,8 @@ env:
 
   learn:
     # rewards
-    linTrackingRewardScale: 10.0
-    angTrackingRewardScale: 10.0
+    linTrackingRewardScale: 0.5
+    angTrackingRewardScale: 0.5
     torqueRewardScale: -0.0000
     actionRateRewardScale: -0.01
     linVelPenalizeScale: -1.0

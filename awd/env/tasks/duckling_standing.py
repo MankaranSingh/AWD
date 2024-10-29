@@ -114,6 +114,23 @@ class DucklingStanding(DucklingAMPTask):
         self._command_change_steps[env_ids] = self.progress_buf[env_ids] + change_steps
 
 @torch.jit.script
+def lgsk_kernel(x: torch.Tensor, scale: float = 50.0, eps:float=2) -> torch.Tensor:
+    """Defines logistic kernel function to bound input to [-0.25, 0)
+
+    Ref: https://arxiv.org/abs/1901.08652 (page 15)
+
+    Args:
+        x: Input tensor.
+        scale: Scaling of the kernel function (controls how wide the 'bell' shape is')
+        eps: Controls how 'tall' the 'bell' shape is.
+
+    Returns:
+        Output tensor computed using kernel.
+    """
+    scaled = x * scale
+    return 1.0 / (scaled.exp() + eps + (-scaled).exp())
+
+@torch.jit.script
 def compute_standing_reward(
     duckling_root_states,
     target_root_states,
@@ -122,8 +139,8 @@ def compute_standing_reward(
 ):
     # type: (Tensor, Tensor, float, float) -> Tensor
     # Compute position error
-    pos_error = torch.abs(duckling_root_states[:, 2] - target_root_states[:, 2])
-    pos_reward = pos_error * -reward_linear_scale
+    pos_error = torch.norm(duckling_root_states[:, 2] - target_root_states[:, 2], p=2, dim=-1)
+    pos_reward = reward_linear_scale * lgsk_kernel(pos_error, scale=50., eps=2.)
 
     # Compute orientation error
     error_quat = torch.abs(quat_diff(target_root_states[:, 3:7], duckling_root_states[:, 3:7]))
