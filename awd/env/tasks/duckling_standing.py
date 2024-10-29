@@ -40,6 +40,7 @@ class DucklingStanding(DucklingAMPTask):
             self.rew_scales["lin_tracking"],
             self.rew_scales["ang_tracking"],
         )
+        #print(tracking_reward[:1])
 
         #self.commands[:, 4] += 0.005
 
@@ -50,8 +51,6 @@ class DucklingStanding(DucklingAMPTask):
 
         # Combine all rewards
         self.rew_buf[:] = tracking_reward + rew_action_rate + rew_lin_vel + rew_ang_vel + rew_orient
-
-        #print(tracking_reward[:1], rew_action_rate[:1], rew_lin_vel[:1], rew_ang_vel[:1], rew_orient[:1])
 
     def get_task_obs_size(self):
         return 6
@@ -86,20 +85,27 @@ class DucklingStanding(DucklingAMPTask):
             device=self.device
         ).squeeze()
 
-        # Sample pitch commands
-        self.commands[env_ids, 3:6] = torch_rand_float(
+        # Calculate angular range scale based on height command
+        # Scale linearly from 0 at extremes to 1 at height=0
+        height_commands = self.commands[env_ids, 2]
+        max_height = self.command_linear_range[1]
+        min_height = self.command_linear_range[0]
+        
+        # Normalize height to [-1,1] range and take absolute value
+        height_norm = torch.abs(2 * (height_commands - min_height) / (max_height - min_height) - 1)
+        # Convert to scale factor that goes from 0 at extremes to 1 at center
+        angular_scale = 1 - height_norm
+
+        # Sample pitch commands and scale them
+        base_angles = torch_rand_float(
             self.command_angular_range[0],
             self.command_angular_range[1],
             (len(env_ids), 3),
             device=self.device
         ).squeeze()
         
-        # self.commands[env_ids, 0] = torch_rand_float(
-        #     self.command_linear_range[0]/3,
-        #     self.command_linear_range[1]/3,
-        #     (len(env_ids), 1),
-        #     device=self.device
-        # ).squeeze()
+        # scale base angles based on height command
+        self.commands[env_ids, 3:6] = base_angles * angular_scale.unsqueeze(-1)
 
         # Update target root height
         self.target_root_states[env_ids, 2] = self._initial_duckling_root_states[env_ids, 2] + self.commands[env_ids, 2]
@@ -114,7 +120,7 @@ class DucklingStanding(DucklingAMPTask):
         self._command_change_steps[env_ids] = self.progress_buf[env_ids] + change_steps
 
 @torch.jit.script
-def lgsk_kernel(x: torch.Tensor, scale: float = 50.0, eps:float=2) -> torch.Tensor:
+def lgsk_kernel(x: torch.Tensor, scale: float = 2.0, eps:float=0.01) -> torch.Tensor:
     """Defines logistic kernel function to bound input to [-0.25, 0)
 
     Ref: https://arxiv.org/abs/1901.08652 (page 15)
@@ -139,8 +145,8 @@ def compute_standing_reward(
 ):
     # type: (Tensor, Tensor, float, float) -> Tensor
     # Compute position error
-    pos_error = torch.norm(duckling_root_states[:, 2] - target_root_states[:, 2], p=2, dim=-1)
-    pos_reward = reward_linear_scale * lgsk_kernel(pos_error, scale=50., eps=2.)
+    pos_error = torch.abs(duckling_root_states[:, 2] - target_root_states[:, 2])
+    pos_reward = reward_linear_scale * -pos_error
 
     # Compute orientation error
     error_quat = torch.abs(quat_diff(target_root_states[:, 3:7], duckling_root_states[:, 3:7]))
