@@ -15,10 +15,9 @@ class DucklingStanding(DucklingAMPTask):
         self.rew_scales = {
             "lin_tracking": cfg["env"]['learn']["linTrackingRewardScale"],
             "ang_tracking": cfg["env"]['learn']["angTrackingRewardScale"],
-            "action_rate": cfg["env"]["learn"]["actionRateRewardScale"] * self.dt,
+            "action_rate": cfg["env"]["learn"]["actionRateRewardScale"] * self.dt, # TODO: check if this is correct
             "lin_vel_penalize": cfg["env"]["learn"]["linVelPenalizeScale"],
             "ang_vel_penalize": cfg["env"]["learn"]["angVelPenalizeScale"], 
-            "orient_penalize": cfg["env"]["learn"]["orientPenalizeScale"]
         }
 
         # Initialize target root states
@@ -30,27 +29,20 @@ class DucklingStanding(DucklingAMPTask):
         self._command_change_steps = torch.zeros(self.num_envs, device=self.device, dtype=torch.int64)
 
     def _compute_reward(self, actions):
-        # Compute action rate penalty
-        rew_action_rate = torch.sum(torch.square(self.last_actions - self.actions), dim=1) * self.rew_scales["action_rate"]
-
-        # Compute main reward using jit function
-        tracking_reward = compute_standing_reward(
+        # Compute all rewards using jit function
+        self.rew_buf[:] = compute_standing_reward(
             self._duckling_root_states,
             self.target_root_states,
+            self.last_actions,
+            self.actions,
+            self._rigid_body_vel,
+            self._rigid_body_ang_vel,
             self.rew_scales["lin_tracking"],
             self.rew_scales["ang_tracking"],
+            self.rew_scales["action_rate"],
+            self.rew_scales["lin_vel_penalize"],
+            self.rew_scales["ang_vel_penalize"]
         )
-        #print(tracking_reward[:1])
-
-        #self.commands[:, 4] += 0.005
-
-        # Compute velocity and orientation penalties
-        rew_lin_vel = torch.sum(torch.square(self._rigid_body_vel[:, 0, :2]), dim=1) * self.rew_scales["lin_vel_penalize"]
-        rew_ang_vel = torch.sum(torch.square(self._rigid_body_ang_vel[:, 0]), dim=1) * self.rew_scales["ang_vel_penalize"]
-        rew_orient = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1) * self.rew_scales["orient_penalize"]
-
-        # Combine all rewards
-        self.rew_buf[:] = tracking_reward + rew_action_rate + rew_lin_vel + rew_ang_vel + rew_orient
 
     def get_task_obs_size(self):
         return 6
@@ -78,21 +70,23 @@ class DucklingStanding(DucklingAMPTask):
         )
         
         # Sample height commands
-        self.commands[env_ids, 2] = torch_rand_float(
+        mask = torch.rand(len(env_ids), device=self.device) > 0.5
+        height_commands = torch_rand_float(
             self.command_linear_range[0],
-            self.command_linear_range[1],
+            self.command_linear_range[1], 
             (len(env_ids), 1),
             device=self.device
         ).squeeze()
+        self.commands[env_ids, 2] = height_commands * mask
 
         # Calculate angular range scale based on height command
         # Scale linearly from 0 at extremes to 1 at height=0
         height_commands = self.commands[env_ids, 2]
         max_height = self.command_linear_range[1]
-        min_height = self.command_linear_range[0]
+        min_height = self.command_linear_range[0] 
         
         # Normalize height to [-1,1] range and take absolute value
-        height_norm = torch.abs(2 * (height_commands - min_height) / (max_height - min_height) - 1)
+        height_norm = torch.abs(2 * (height_commands) / (max_height - min_height))
         # Convert to scale factor that goes from 0 at extremes to 1 at center
         angular_scale = 1 - height_norm
 
@@ -121,36 +115,36 @@ class DucklingStanding(DucklingAMPTask):
 
 @torch.jit.script
 def lgsk_kernel(x: torch.Tensor, scale: float = 2.0, eps:float=0.01) -> torch.Tensor:
-    """Defines logistic kernel function to bound input to [-0.25, 0)
-
-    Ref: https://arxiv.org/abs/1901.08652 (page 15)
-
-    Args:
-        x: Input tensor.
-        scale: Scaling of the kernel function (controls how wide the 'bell' shape is')
-        eps: Controls how 'tall' the 'bell' shape is.
-
-    Returns:
-        Output tensor computed using kernel.
-    """
     scaled = x * scale
     return 1.0 / (scaled.exp() + eps + (-scaled).exp())
 
 @torch.jit.script
 def compute_standing_reward(
-    duckling_root_states,
-    target_root_states,
-    reward_linear_scale,
-    reward_angular_scale,
-):
-    # type: (Tensor, Tensor, float, float) -> Tensor
+    duckling_root_states: torch.Tensor,
+    target_root_states: torch.Tensor,
+    last_actions: torch.Tensor,
+    actions: torch.Tensor,
+    rigid_body_vel: torch.Tensor,
+    rigid_body_ang_vel: torch.Tensor,
+    reward_linear_tracking_scale: float,
+    reward_angular_tracking_scale: float,
+    reward_action_rate_scale: float,
+    reward_lin_vel_penalize_scale: float,
+    reward_ang_vel_penalize_scale: float,
+) -> torch.Tensor:
     # Compute position error
     pos_error = torch.abs(duckling_root_states[:, 2] - target_root_states[:, 2])
-    pos_reward = reward_linear_scale * -pos_error
+    pos_reward = reward_linear_tracking_scale / (10. * pos_error + 0.01)
 
     # Compute orientation error
     error_quat = torch.abs(quat_diff(target_root_states[:, 3:7], duckling_root_states[:, 3:7]))
-    rot_reward =  reward_angular_scale / (3. * torch.abs(error_quat) + 0.01)
+    rot_reward = reward_angular_tracking_scale / (3. * error_quat + 0.01)
 
-    return pos_reward + rot_reward
+    # Compute action rate penalty
+    rew_action_rate = torch.sum(torch.square(last_actions - actions), dim=1) * reward_action_rate_scale
 
+    # Compute velocity penalties
+    rew_lin_vel = torch.sum(torch.square(rigid_body_vel[:, 0, :2]), dim=1) * reward_lin_vel_penalize_scale
+    rew_ang_vel = torch.sum(torch.square(rigid_body_ang_vel[:, 0]), dim=1) * reward_ang_vel_penalize_scale
+
+    return pos_reward + rot_reward + rew_action_rate + rew_lin_vel + rew_ang_vel
