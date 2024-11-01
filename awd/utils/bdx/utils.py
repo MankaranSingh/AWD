@@ -187,7 +187,9 @@ def quaternion_slerp(q0, q1, fraction, spin=0, shortestpath=True):
     out[final_mask] = q0[final_mask]
     return out
 
-def quaternion_slerp(q1, q2, t, epsilon=1e-6):    
+@torch.jit.script
+def quaternion_slerp(q1, q2, t, epsilon=1e-6): 
+    # type: (Tensor, Tensor, Tensor, float) -> Tensor   
     # Normalize the quaternions
     q1 = q1 / q1.norm(p=2, dim=-1, keepdim=True)
     q2 = q2 / q2.norm(p=2, dim=-1, keepdim=True)
