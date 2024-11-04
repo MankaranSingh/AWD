@@ -54,6 +54,7 @@ object_names = {
     "left_toe": "left_foot_link",
     "right_toe": "right_foot_link"
 }
+default_angles = [-0.0, 1.5708, -0.0, 0.0, 0.0, -0.0, -0.0, -0.0, -1.5708, 0.0, 0.0, -0.0, 1.5708, 0.0, -0.0, -0.0]
 
 # Initialize storage arrays
 prev_joint_angles = None
@@ -87,9 +88,20 @@ for frame in range(start_frame, end_frame + 1):
     frame_data = {}
 
     # Get joint angles
-    for bone in bpy.context.object.pose.bones:
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    obj_eval = bpy.context.object.evaluated_get(depsgraph)
+    idx = 0
+    for bone in obj_eval.pose.bones:
         if bone.name in joint_names:
-            frame_joint_angles[joint_names.index(bone.name)] = round(bone.matrix.to_euler().y, 4)
+            relative_matrix = bone.matrix
+            parent_bone = bone.parent
+            if parent_bone:
+                relative_matrix =  parent_bone.matrix.inverted() @ relative_matrix
+            euler_angles = relative_matrix.to_euler()
+            frame_joint_angles[joint_names.index(bone.name)] = round(euler_angles.y - default_angles[joint_names.index(bone.name)], 4)
+            idx += 1
+    
+    print(frame_joint_angles)
 
     # Get object positions and quaternion for pelvis
     pelvis_obj = bpy.data.objects[object_names["pelvis"]]
@@ -127,11 +139,11 @@ for frame in range(start_frame, end_frame + 1):
     )
 
     # Append frame data to episode["Frames"]
-    frame_data["root_pos"] = [pelvis_position.x, pelvis_position.y, pelvis_position.z]
+    frame_data["root_pos"] = [pelvis_position.x, pelvis_position.y, pelvis_position.z+0.01]
     frame_data["root_quat"] = [pelvis_quat.x, pelvis_quat.y, pelvis_quat.z, pelvis_quat.w]
     frame_data["joints_pos"] = frame_joint_angles
-    frame_data["left_toe_pos"] = [left_toe_pos.x, left_toe_pos.y, left_toe_pos.z]
-    frame_data["right_toe_pos"] = [right_toe_pos.x, right_toe_pos.y, right_toe_pos.z]
+    frame_data["left_toe_pos"] = [left_toe_pos.x, left_toe_pos.y, left_toe_pos.z+0.01]
+    frame_data["right_toe_pos"] = [right_toe_pos.x, right_toe_pos.y, right_toe_pos.z+0.01]
     frame_data["world_linear_vel"] = world_linear_vel
     frame_data["world_angular_vel"] = world_angular_vel
     frame_data["joints_vel"] = joints_vel
@@ -142,9 +154,9 @@ for frame in range(start_frame, end_frame + 1):
 
     # Update previous frame values
     prev_joint_angles = frame_joint_angles
-    prev_left_toe_pos = [left_toe_pos.x, left_toe_pos.y, left_toe_pos.z]
-    prev_right_toe_pos = [right_toe_pos.x, right_toe_pos.y, right_toe_pos.z]
-    prev_pelvis_pos = [pelvis_position.x, pelvis_position.y, pelvis_position.z]
+    prev_left_toe_pos = [left_toe_pos.x, left_toe_pos.y, left_toe_pos.z+0.01]
+    prev_right_toe_pos = [right_toe_pos.x, right_toe_pos.y, right_toe_pos.z+0.01]
+    prev_pelvis_pos = [pelvis_position.x, pelvis_position.y, pelvis_position.z+0.01]
     prev_pelvis_quat = [pelvis_quat.x, pelvis_quat.y, pelvis_quat.z, pelvis_quat.w]
 
 # Calculate Vel_x, Vel_y, and Yaw based on pelvis positions
