@@ -10,8 +10,8 @@ env:
   powerScale: 1.0
   controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid"
-  hybridInitProb: 0.3
-  numAMPObsSteps: 5
+  hybridInitProb: 0.5
+  numAMPObsSteps: 10
   
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
@@ -60,10 +60,10 @@ env:
     restitution: 0. # [-]
     # rough terrain only:
     curriculum: true
-    maxInitMapLevel: 0
+    maxInitMapLevel: 3
     mapLength: 15
     mapWidth: 15
-    numLevels: 10
+    numLevels: 4
     numTerrains: 10
     # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
     terrainProportions: [0.2, 0.2, 0.2, 0.2, 0.2]

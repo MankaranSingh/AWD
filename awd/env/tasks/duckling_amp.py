@@ -208,6 +208,9 @@ class DucklingAMP(Duckling):
 
         root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
                = self._motion_lib.get_motion_state(motion_ids, motion_times)
+        
+        if self.custom_origins:
+            root_pos += self._initial_duckling_root_states[env_ids][:, :3]
 
         self._set_env_state(env_ids=env_ids, 
                             root_pos=root_pos, 

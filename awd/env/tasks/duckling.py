@@ -906,24 +906,25 @@ class Terrain:
                 )
                 difficulty = i / num_levels
                 choice = j / num_terrains
-                slope = difficulty * 0.4
+                slope = difficulty * 0.6
                 step_height = 0.05 + 0.1 * difficulty
-                discrete_obstacles_height = 0.05 + difficulty * 0.15
+                discrete_obstacles_height = 0.01 + difficulty * 0.1
                 stepping_stones_size = 2 - 1.8 * difficulty
                 if choice < self.proportions[0]:
                     if choice < 0.05:
                         slope *= -1
-                    pyramid_sloped_terrain(terrain, slope=slope, platform_size=3.0)
+                        slope /= 1.5
+                    pyramid_sloped_terrain(terrain, slope=slope/2, platform_size=3.0)
                 elif choice < self.proportions[1]:
                     if choice < 0.15:
                         slope *= -1
-                    pyramid_sloped_terrain(terrain, slope=slope, platform_size=3.0)
+                    #pyramid_sloped_terrain(terrain, slope=slope, platform_size=3.0)
                     random_uniform_terrain(
                         terrain,
-                        min_height=-0.1,
-                        max_height=0.1,
-                        step=0.025,
-                        downsampled_scale=0.2,
+                        min_height=-0.1*difficulty,
+                        max_height=0.1*difficulty,
+                        step=0.1,
+                        downsampled_scale=0.5,
                     )
                 elif choice < self.proportions[3]:
                     if choice < self.proportions[2]:
@@ -931,7 +932,7 @@ class Terrain:
                     pyramid_stairs_terrain(
                         terrain,
                         step_width=0.75,
-                        step_height=step_height,
+                        step_height=step_height/2,
                         platform_size=3.0,
                     )
                 elif choice < self.proportions[4]:
