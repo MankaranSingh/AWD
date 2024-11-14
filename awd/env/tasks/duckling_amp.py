@@ -182,7 +182,13 @@ class DucklingAMP(Duckling):
         return
     
     def _reset_default(self, env_ids):
-        self._duckling_root_states[env_ids] = self._initial_duckling_root_states[env_ids]
+        if self.custom_origins:
+            self.update_terrain_level(env_ids)
+            self._duckling_root_states[env_ids] = self._initial_duckling_root_states[env_ids]
+            self._duckling_root_states[env_ids, :2] += torch_rand_float(-0.5, 0.5, (len(env_ids), 2), device=self.device)
+        else:
+            self._duckling_root_states[env_ids] = self._initial_duckling_root_states[env_ids]
+
         self._dof_pos[env_ids] = self._initial_dof_pos[env_ids]
         self._dof_vel[env_ids] = self._initial_dof_vel[env_ids]
         self._reset_default_env_ids = env_ids
@@ -353,4 +359,5 @@ def build_amp_observations(root_pos, root_rot, root_vel, root_ang_vel, dof_pos, 
     flat_local_key_pos = local_end_pos.view(local_key_body_pos.shape[0], local_key_body_pos.shape[1] * local_key_body_pos.shape[2])
 
     obs = torch.cat((root_h_obs, root_rot_obs, local_root_vel, local_root_ang_vel, dof_obs, dof_vel, flat_local_key_pos), dim=-1)
+    #obs = torch.cat((root_h_obs, root_rot_obs, dof_obs, flat_local_key_pos), dim=-1) # reduced amp obs
     return obs

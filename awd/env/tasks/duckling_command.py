@@ -113,6 +113,16 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self._command_change_steps[env_ids] = self.progress_buf[env_ids] + change_steps
         return
 
+    def update_terrain_level(self, env_ids):
+        if not self.init_done or not self.curriculum:
+            # don't change on initial reset
+            return
+        # distance = torch.norm(self._duckling_root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1)
+        # self.terrain_levels[env_ids] -= 1 * (distance < torch.norm(self.commands[env_ids, :2])*self.max_episode_length_s*0.25)
+        # self.terrain_levels[env_ids] += 1 * (distance > self.terrain.env_length / 2)
+        # self.terrain_levels[env_ids] = torch.clip(self.terrain_levels[env_ids], 0) % self.terrain.env_rows
+        # self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids], self.terrain_types[env_ids]]
+
     def _compute_task_obs(self, env_ids=None):
         if (env_ids is None):
             obs = self.commands * self.commands_scale

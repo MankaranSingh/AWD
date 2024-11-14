@@ -10,7 +10,7 @@ env:
   powerScale: 1.0
   controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid"
-  hybridInitProb: 0.5
+  hybridInitProb: 0.0
   numAMPObsSteps: 15
   
   localRootObs: True
@@ -30,29 +30,51 @@ env:
     assetRoot: "awd/data/assets"
     assetFileName: "go_bdx/go_bdx.urdf"
 
-  plane:
-    staticFriction: 1.0
-    dynamicFriction: 1.0
-    restitution: 0.0
-
   learn:
     # rewards
     feetAirTimeRewardScale: 0.8
-    heightTrackingRewardScale: 0.5
+    heightTrackingRewardScale: 1.0
     targetHeight: 1.0
+  
+  terrain:
+    terrainType: trimesh # plane, or trimesh
+    staticFriction: 1.0 # [-]
+    dynamicFriction: 1.0 # [-]
+    restitution: 0. # [-]
+    # rough terrain only:
+    curriculum: true
+    maxInitMapLevel: 0
+    mapLength: 15
+    mapWidth: 15
+    numLevels: 10
+    numTerrains: 10
+    # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
+    terrainProportions: [0.2, 0.2, 0.2, 0.2, 0.2]
+    # tri mesh only:
+    slopeTreshold: 0.8
+    horizontalScale: 0.25
+    verticalScale: 0.005
+    borderSize: 5
+    numPerEnv: 2
+    minHeight: -0.001
+    maxHeight: 0.001
+    step: 0.05
+    platformSize: 0.5 # pyramids
+    stepHeightRange: [-0.05, 0.05] # pyramid stairs
+    stepWidth: 0.1
 
 sim:
-  substeps: 2
+  substeps: 1
   physx:
     num_threads: 4
     solver_type: 1  # 0: pgs, 1: tgs
     num_position_iterations: 4
-    num_velocity_iterations: 0
+    num_velocity_iterations: 1
     contact_offset: 0.02
     rest_offset: 0.0
     bounce_threshold_velocity: 0.2
-    max_depenetration_velocity: 10.0
-    default_buffer_size_multiplier: 10.0
+    max_depenetration_velocity: 100.0
+    default_buffer_size_multiplier: 5.0
     contact_collection: 1
 
   flex:
@@ -64,68 +86,60 @@ task:
   randomize: False
   randomization_params:
     frequency: 600   # Define how many environment steps between generating new randomizations
-    observations:
-      range: [0, .002] # range for the white noise
-      operation: "additive"
-      distribution: "gaussian"
-    actions:
-      range: [0., .02]
-      operation: "additive"
-      distribution: "gaussian"
     sim_params: 
       gravity:
-        range: [0, 0.4]
+        range: [0, 0.1]
         operation: "additive"
         distribution: "gaussian"
         schedule: "linear"  # "linear" will linearly interpolate between no rand and max rand
-        schedule_steps: 100000
+        schedule_steps: 24000
     actor_params:
       duckling:
         color: True
         rigid_body_properties:
           mass: 
-            range: [0.8, 1.5]
+            range: [0.8, 1.2]
             operation: "scaling"
             distribution: "uniform"
             setup_only: True # Property will only be randomized once before simulation is started. See Domain Randomization Documentation for more info.
             schedule: "linear"  # "linear" will linearly interpolate between no rand and max rand
-            schedule_steps: 100000
+            schedule_steps: 24000
         rigid_shape_properties:
           friction:
             num_buckets: 500
-            range: [0.7, 1.3]
+            range: [0.8, 1.2]
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 100000
+            schedule_steps: 24000
           restitution:
-            range: [0., 0.7]
+            range: [0.8, 0.9]
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 100000
+            schedule_steps: 24000
         dof_properties:
           damping: 
-            range: [0.8, 1.5]
+            range: [0.5, 1.5]
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 100000
+            schedule_steps: 24000
           stiffness: 
-            range: [0.8, 1.5]
+            range: [0.5, 1.5]
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 100000
-          # lower:
-          #   range: [0, 0.01]
-          #   operation: "additive"
-          #   distribution: "gaussian"
-          #   schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-          #   schedule_steps: 3000
-          # upper:
-          #   range: [0, 0.01]
-          #   operation: "additive"
-          #   distribution: "gaussian"
-          #   schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-          #   schedule_steps: 3000
+            schedule_steps: 24000
+          lower:
+            range: [0, 0.01]
+            operation: "additive"
+            distribution: "gaussian"
+            schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
+            schedule_steps: 24000
+          upper:
+            range: [0, 0.01]
+            operation: "additive"
+            distribution: "gaussian"
+            schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
+            schedule_steps: 24000

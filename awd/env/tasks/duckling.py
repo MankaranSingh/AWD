@@ -35,6 +35,7 @@ import xml.etree.ElementTree as ET
 from isaacgym import gymtorch
 from isaacgym import gymapi
 from isaacgym.torch_utils import *
+from isaacgym.terrain_utils import *
 
 from utils import torch_utils
 
@@ -48,16 +49,20 @@ class Duckling(BaseTask):
         self.asset_properties = None
         self._dof_axis = None
         self._dof_axis_array = None
+        self.custom_origins = False
+        self.init_done = False
+        self.curriculum = self.cfg["env"]["terrain"]["curriculum"]
 
         self._pd_control = self.cfg["env"]["pdControl"]
         self.power_scale = self.cfg["env"]["powerScale"]
 
         self.debug_viz = self.cfg["env"]["enableDebugVis"]
-        self.plane_static_friction = self.cfg["env"]["plane"]["staticFriction"]
-        self.plane_dynamic_friction = self.cfg["env"]["plane"]["dynamicFriction"]
-        self.plane_restitution = self.cfg["env"]["plane"]["restitution"]
+        self.plane_static_friction = self.cfg["env"]["terrain"]["staticFriction"]
+        self.plane_dynamic_friction = self.cfg["env"]["terrain"]["dynamicFriction"]
+        self.plane_restitution = self.cfg["env"]["terrain"]["restitution"]
 
         self.max_episode_length = self.cfg["env"]["episodeLength"]
+        self.max_episode_length_s = self.max_episode_length * sim_params.dt
         self._local_root_obs = self.cfg["env"]["localRootObs"]
         self._root_height_obs = self.cfg["env"].get("rootHeightObs", True)
         self._randomize_mask_joints = self.cfg["env"].get("randomizeMaskJoints", False)
@@ -104,8 +109,8 @@ class Duckling(BaseTask):
         
         self._duckling_root_states = self._root_states.view(self.num_envs, num_actors, actor_root_state.shape[-1])[..., 0, :]
         self._initial_duckling_root_states = self._duckling_root_states.clone()
-        self._initial_duckling_root_states[:, 7:13] = 0
-        self._initial_duckling_root_states[:, 2] = 0.0
+        # self._initial_duckling_root_states[:, 7:13] = 0
+        # self._initial_duckling_root_states[:, 2] = 0 if self.cfg["env"]["terrain"]["terrainType"] == "plane" else self.cfg["env"]["terrain"]["maxHeight"]
 
         self._duckling_actor_ids = num_actors * torch.arange(self.num_envs, device=self.device, dtype=torch.int32)
 
@@ -166,7 +171,8 @@ class Duckling(BaseTask):
         
         if self.viewer != None:
             self._init_camera()
-            
+
+        self.init_done = True
         return
 
     def get_obs_size(self):
@@ -183,7 +189,11 @@ class Duckling(BaseTask):
         self.up_axis_idx = self.set_sim_params_up_axis(self.sim_params, 'z')
         self.sim = super().create_sim(self.device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
 
-        self._create_ground_plane()
+        if self.cfg["env"]["terrain"]["terrainType"] == "plane":
+            self._create_ground_plane()
+        else:
+            self._create_trimesh()
+            self.custom_origins = True
         self._create_envs(self.num_envs, self.cfg["env"]['envSpacing'], int(np.sqrt(self.num_envs)))
         return
 
@@ -238,6 +248,29 @@ class Duckling(BaseTask):
         plane_params.restitution = self.plane_restitution
         self.gym.add_ground(self.sim, plane_params)
         return
+
+    def _create_trimesh(self):
+        self.terrain = Terrain(self.cfg["env"]["terrain"], num_robots=self.num_envs)
+        tm_params = gymapi.TriangleMeshParams()
+        tm_params.nb_vertices = self.terrain.vertices.shape[0]
+        tm_params.nb_triangles = self.terrain.triangles.shape[0]
+        tm_params.transform.p.x = -self.terrain.border_size
+        tm_params.transform.p.y = -self.terrain.border_size
+        tm_params.transform.p.z = 0.0
+        tm_params.static_friction = self.cfg["env"]["terrain"]["staticFriction"]
+        tm_params.dynamic_friction = self.cfg["env"]["terrain"]["dynamicFriction"]
+        tm_params.restitution = self.cfg["env"]["terrain"]["restitution"]
+        self.gym.add_triangle_mesh(
+            self.sim,
+            self.terrain.vertices.flatten(order="C"),
+            self.terrain.triangles.flatten(order="C"),
+            tm_params,
+        )
+        self.height_samples = (
+            torch.tensor(self.terrain.heightsamples)
+            .view(self.terrain.tot_rows, self.terrain.tot_cols)
+            .to(self.device)
+        )
 
     def _get_asset_root(self):
         return self.cfg["env"]["asset"]["assetRoot"]
@@ -320,9 +353,6 @@ class Duckling(BaseTask):
         return self._dof_axis
 
     def _create_envs(self, num_envs, spacing, num_per_row):
-        lower = gymapi.Vec3(-spacing, -spacing, 0.0)
-        upper = gymapi.Vec3(spacing, spacing, spacing)
-
         asset_root = self._get_asset_root()
         asset_file = self._get_asset_file_name()
 
@@ -377,9 +407,21 @@ class Duckling(BaseTask):
         self.dof_limits_lower = []
         self.dof_limits_upper = []
 
+        # env origins
+        self.env_origins = torch.zeros(self.num_envs, 3, device=self.device, requires_grad=False)
+        if not self.curriculum: self.cfg["env"]["terrain"]["maxInitMapLevel"] = self.cfg["env"]["terrain"]["numLevels"] - 1
+        self.terrain_levels = torch.randint(0, self.cfg["env"]["terrain"]["maxInitMapLevel"]+1, (self.num_envs,), device=self.device)
+        self.terrain_types = torch.randint(0, self.cfg["env"]["terrain"]["numTerrains"], (self.num_envs,), device=self.device)
+        if self.custom_origins:
+            self.terrain_origins = torch.from_numpy(self.terrain.env_origins).to(self.device).to(torch.float)
+            spacing = 0.
+
+        env_lower = gymapi.Vec3(-spacing, -spacing, 0.0)
+        env_upper = gymapi.Vec3(spacing, spacing, spacing)
+
         for i in range(self.num_envs):
             # create env instance
-            env_ptr = self.gym.create_env(self.sim, lower, upper, num_per_row)
+            env_ptr = self.gym.create_env(self.sim, env_lower, env_upper, num_per_row)
             self._build_env(i, env_ptr, duckling_asset)
             self.envs.append(env_ptr)
 
@@ -399,6 +441,10 @@ class Duckling(BaseTask):
 
         if (self._pd_control):
             self._build_pd_action_offset_scale()
+        
+        # object_rb_props = self.gym.get_actor_rigid_body_properties(self.envs[0], self.duckling_handles[0])
+        # masses = [prop.mass for prop in object_rb_props]
+        # print("masses:", masses)
 
         return
     
@@ -408,11 +454,11 @@ class Duckling(BaseTask):
         segmentation_id = 0
 
         start_pose = gymapi.Transform()
-        asset_file = self._get_asset_file_name()
-        char_h = 0.0
-
-        start_pose.p = gymapi.Vec3(*get_axis_params(char_h, self.up_axis_idx))
-        start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
+        if self.custom_origins:
+            self.env_origins[env_id] = self.terrain_origins[self.terrain_levels[env_id], self.terrain_types[env_id]]
+            pos = self.env_origins[env_id].clone()
+            pos[:2] += torch_rand_float(-1., 1., (2, 1), device=self.device).squeeze(1)
+            start_pose.p = gymapi.Vec3(*pos)
 
         duckling_handle = self.gym.create_actor(env_ptr, duckling_asset, start_pose, "duckling", col_group, col_filter, segmentation_id)
 
@@ -713,9 +759,223 @@ class Duckling(BaseTask):
         self._cam_prev_char_pos[:] = char_root_pos
         return
 
+    def update_terrain_level(self, env_ids):
+        if not self.init_done or not self.curriculum:
+            # don't change on initial reset
+            return
+        # distance = torch.norm(self._duckling_root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1)
+        # self.terrain_levels[env_ids] -= 1 * (distance < torch.norm(self.commands[env_ids, :2])*self.max_episode_length_s*0.25)
+        # self.terrain_levels[env_ids] += 1 * (distance > self.terrain.env_length / 2)
+        # self.terrain_levels[env_ids] = torch.clip(self.terrain_levels[env_ids], 0) % self.terrain.env_rows
+        # self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids], self.terrain_types[env_ids]]
+
     def _update_debug_viz(self):
         self.gym.clear_lines(self.viewer)
         return
+
+class Terrain:
+    def __init__(self, cfg, num_robots) -> None:
+        self.type = cfg["terrainType"]
+        if self.type in ["none", "plane"]:
+            return
+        self.horizontal_scale = cfg["horizontalScale"]
+        self.vertical_scale = cfg["verticalScale"]
+        self.border_size = cfg["borderSize"]
+        self.num_per_env = cfg["numPerEnv"]
+        self.env_length = cfg["mapLength"]
+        self.env_width = cfg["mapWidth"]
+        self.min_height = cfg["minHeight"]
+        self.max_height = cfg["maxHeight"]
+        self.step = cfg["step"]
+        self.platform_size = cfg["platformSize"]
+        self.step_height_range = cfg["stepHeightRange"]
+        self.step_width = cfg["stepWidth"]
+        self.proportions = [
+            np.sum(cfg["terrainProportions"][: i + 1])
+            for i in range(len(cfg["terrainProportions"]))
+        ]
+        self.env_rows = cfg["numLevels"]
+        self.env_cols = cfg["numTerrains"]
+        self.num_maps = self.env_rows * self.env_cols
+        self.num_per_env = int(num_robots / self.num_maps)
+        self.env_origins = np.zeros((self.env_rows, self.env_cols, 3))
+        self.width_per_env_pixels = int(self.env_width / self.horizontal_scale)
+        self.length_per_env_pixels = int(self.env_length / self.horizontal_scale)
+        self.border = int(self.border_size / self.horizontal_scale)
+        self.tot_cols = int(self.env_cols * self.width_per_env_pixels) + 2 * self.border
+        self.tot_rows = (
+            int(self.env_rows * self.length_per_env_pixels) + 2 * self.border
+        )
+        self.height_field_raw = np.zeros((self.tot_rows, self.tot_cols), dtype=np.int16)
+        if cfg["curriculum"]:
+            self.curiculum(
+                num_robots, num_terrains=self.env_cols, num_levels=self.env_rows
+            )
+        else:
+            self.randomized_terrain()
+        self.heightsamples = self.height_field_raw
+        self.vertices, self.triangles = convert_heightfield_to_trimesh(
+            self.height_field_raw,
+            self.horizontal_scale,
+            self.vertical_scale,
+            cfg["slopeTreshold"],
+        )
+    def randomized_terrain(self):
+        for k in range(self.num_maps):
+            # Env coordinates in the world
+            (i, j) = np.unravel_index(k, (self.env_rows, self.env_cols))
+            # Heightfield coordinate system from now on
+            start_x = self.border + i * self.length_per_env_pixels
+            end_x = self.border + (i + 1) * self.length_per_env_pixels
+            start_y = self.border + j * self.width_per_env_pixels
+            end_y = self.border + (j + 1) * self.width_per_env_pixels
+            terrain = SubTerrain(
+                "terrain",
+                width=self.width_per_env_pixels,
+                length=self.width_per_env_pixels,
+                vertical_scale=self.vertical_scale,
+                horizontal_scale=self.horizontal_scale,
+            )
+            random_uniform_terrain(
+                terrain,
+                min_height=self.min_height,
+                max_height=self.max_height,
+                step=self.step,
+                downsampled_scale=0.2,
+            )
+            # choice = np.random.uniform(0, 1)
+            # if choice < 0.1:
+            #     if np.random.choice([0, 1]):
+            #         pyramid_sloped_terrain(
+            #             terrain,
+            #             np.random.choice([-0.3, -0.2, 0, 0.2, 0.3]),
+            #             self.platform_size,
+            #         )
+            #         random_uniform_terrain(
+            #             terrain,
+            #             min_height=self.min_height,
+            #             max_height=self.max_height,
+            #             step=self.step,
+            #             downsampled_scale=0.2,
+            #         )
+            #     else:
+            #         pyramid_sloped_terrain(
+            #             terrain,
+            #             np.random.choice([-0.3, -0.2, 0, 0.2, 0.3]),
+            #             self.platform_size,
+            #         )
+            # elif choice < 0.6:
+            #     # step_height = np.random.choice([-0.18, -0.15, -0.1, -0.05, 0.05, 0.1, 0.15, 0.18])
+            #     step_height = np.random.choice(self.step_height_range)
+            #     pyramid_stairs_terrain(
+            #         terrain,
+            #         step_width=self.step_width,
+            #         step_height=step_height,
+            #         platform_size=self.platform_size,
+            #     )
+            # elif choice < 1.0:
+            #     discrete_obstacles_terrain(
+            #         terrain, 0.15, 1.0, 2.0, 40, platform_size=self.platform_size
+            #     )
+            self.height_field_raw[
+                start_x:end_x, start_y:end_y
+            ] = terrain.height_field_raw
+            env_origin_x = (i + 0.5) * self.env_length
+            env_origin_y = (j + 0.5) * self.env_width
+            x1 = int((self.env_length / 2.0 - 1) / self.horizontal_scale)
+            x2 = int((self.env_length / 2.0 + 1) / self.horizontal_scale)
+            y1 = int((self.env_width / 2.0 - 1) / self.horizontal_scale)
+            y2 = int((self.env_width / 2.0 + 1) / self.horizontal_scale)
+            env_origin_z = (
+                np.max(terrain.height_field_raw[x1:x2, y1:y2]) * self.vertical_scale
+            )
+            self.env_origins[i, j] = [env_origin_x, env_origin_y, env_origin_z]
+    # TODO
+    def curiculum(self, num_robots, num_terrains, num_levels):
+        num_robots_per_map = int(num_robots / num_terrains)
+        left_over = num_robots % num_terrains
+        idx = 0
+        for j in range(num_terrains):
+            for i in range(num_levels):
+                terrain = SubTerrain(
+                    "terrain",
+                    width=self.width_per_env_pixels,
+                    length=self.width_per_env_pixels,
+                    vertical_scale=self.vertical_scale,
+                    horizontal_scale=self.horizontal_scale,
+                )
+                difficulty = i / num_levels
+                choice = j / num_terrains
+                slope = difficulty * 0.4
+                step_height = 0.05 + 0.1 * difficulty
+                discrete_obstacles_height = 0.05 + difficulty * 0.15
+                stepping_stones_size = 2 - 1.8 * difficulty
+                if choice < self.proportions[0]:
+                    if choice < 0.05:
+                        slope *= -1
+                    pyramid_sloped_terrain(terrain, slope=slope, platform_size=3.0)
+                elif choice < self.proportions[1]:
+                    if choice < 0.15:
+                        slope *= -1
+                    pyramid_sloped_terrain(terrain, slope=slope, platform_size=3.0)
+                    random_uniform_terrain(
+                        terrain,
+                        min_height=-0.1,
+                        max_height=0.1,
+                        step=0.025,
+                        downsampled_scale=0.2,
+                    )
+                elif choice < self.proportions[3]:
+                    if choice < self.proportions[2]:
+                        step_height *= -1
+                    pyramid_stairs_terrain(
+                        terrain,
+                        step_width=0.75,
+                        step_height=step_height,
+                        platform_size=3.0,
+                    )
+                elif choice < self.proportions[4]:
+                    discrete_obstacles_terrain(
+                        terrain,
+                        discrete_obstacles_height,
+                        1.0,
+                        3.0,
+                        60,
+                        platform_size=3.0,
+                    )
+                    # wave_terrain(
+                    #     terrain,
+                    #     num_waves=1., amplitude=slope*5
+                    # )
+                else:
+                    stepping_stones_terrain(
+                        terrain,
+                        stone_size=stepping_stones_size,
+                        stone_distance=0.1,
+                        max_height=0.0,
+                        platform_size=3.0,
+                    )
+                # Heightfield coordinate system
+                start_x = self.border + i * self.length_per_env_pixels
+                end_x = self.border + (i + 1) * self.length_per_env_pixels
+                start_y = self.border + j * self.width_per_env_pixels
+                end_y = self.border + (j + 1) * self.width_per_env_pixels
+                self.height_field_raw[
+                    start_x:end_x, start_y:end_y
+                ] = terrain.height_field_raw
+                robots_in_map = num_robots_per_map
+                if j < left_over:
+                    robots_in_map += 1
+                env_origin_x = (i + 0.5) * self.env_length
+                env_origin_y = (j + 0.5) * self.env_width
+                x1 = int((self.env_length / 2.0 - 1) / self.horizontal_scale)
+                x2 = int((self.env_length / 2.0 + 1) / self.horizontal_scale)
+                y1 = int((self.env_width / 2.0 - 1) / self.horizontal_scale)
+                y2 = int((self.env_width / 2.0 + 1) / self.horizontal_scale)
+                env_origin_z = (
+                    np.max(terrain.height_field_raw[x1:x2, y1:y2]) * self.vertical_scale
+                )
+                self.env_origins[i, j] = [env_origin_x, env_origin_y, env_origin_z]
 
 #####################################################################
 ###=========================jit functions=========================###
@@ -780,7 +1040,6 @@ def compute_duckling_observations(
             dof_pos,
             dof_vel,
             actions,
-            last_actions,
         ),
         dim=-1,
     )
