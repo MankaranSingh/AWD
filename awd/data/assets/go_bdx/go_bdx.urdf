@@ -214,12 +214,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.022945 -0.119009 -0.288744"/>
-      <geometry>
-        <mesh filename="meshes/left_thigh.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <link name="left_hip">
     <inertial>
@@ -234,12 +228,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.040411 -0.049408 -0.287959"/>
-      <geometry>
-        <mesh filename="meshes/left_hip.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <link name="left_hip_rotation">
     <inertial>
@@ -254,12 +242,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.033111 -0.046658 -0.363959"/>
-      <geometry>
-        <mesh filename="meshes/left_hip_rotation.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <link name="right_foot">
     <inertial>
@@ -327,12 +309,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.022945 0.119009 -0.288744"/>
-      <geometry>
-        <mesh filename="meshes/right_thigh.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <link name="right_hip">
     <inertial>
@@ -347,12 +323,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.040411 0.049408 -0.287959"/>
-      <geometry>
-        <mesh filename="meshes/right_hip.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <link name="right_hip_rotation">
     <inertial>
@@ -367,12 +337,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.033111 0.046658 -0.363959"/>
-      <geometry>
-        <mesh filename="meshes/right_hip_rotation.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <link name="ear_right">
     <inertial>
@@ -460,12 +424,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.008384 -0.00085 -0.535021"/>
-      <geometry>
-        <mesh filename="meshes/head_body_yaw.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <link name="head_body_pitch">
     <inertial>
@@ -480,12 +438,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.008683 -0.00015 -0.506051"/>
-      <geometry>
-        <mesh filename="meshes/head_body_pitch.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <link name="neck">
     <inertial>
@@ -500,12 +452,6 @@
       </geometry>
       <material name="silver"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.056339 -0.0119 -0.395171"/>
-      <geometry>
-        <mesh filename="meshes/neck.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
 </robot>
 
