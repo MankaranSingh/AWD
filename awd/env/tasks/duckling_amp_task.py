@@ -40,7 +40,7 @@ class DucklingAMPTask(duckling_amp.DucklingAMP):
                          device_type=device_type,
                          device_id=device_id,
                          headless=headless)
-        self.episode_sums = {}
+        self.episode_reward_sums = {}
         self.extras["episode"] = {}
         return
 
@@ -72,9 +72,9 @@ class DucklingAMPTask(duckling_amp.DucklingAMP):
 
     def _reset_envs(self, env_ids):
         if len(env_ids):
-            for key in self.episode_sums.keys():
-                self.extras["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_ids] / (self.progress_buf[env_ids]))
-                self.episode_sums[key][env_ids] = 0.
+            for key in self.episode_reward_sums.keys():
+                self.extras["episode"]['rew_' + key] = torch.mean(self.episode_reward_sums[key][env_ids] / (self.progress_buf[env_ids]))
+                self.episode_reward_sums[key][env_ids] = 0.
         super()._reset_envs(env_ids)
         self._reset_task(env_ids)
         return

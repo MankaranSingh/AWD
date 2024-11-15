@@ -29,7 +29,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.rew_scales["action_rate"] = self.cfg["env"]["learn"]["actionRateRewardScale"]
 
         # reward episode sums
-        self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
+        self.episode_reward_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
                              for name in self.rew_scales.keys()}
 
         # randomization
@@ -147,12 +147,12 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
 
         self.rew_buf[:] = torch.clip(rew_lin_vel_x + rew_lin_vel_y + rew_ang_vel_z + rew_torque, 0., None) + rew_action_rate + rew_airTime
 
-        self.episode_sums["lin_vel_x"] += rew_lin_vel_x
-        self.episode_sums["lin_vel_y"] += rew_lin_vel_y
-        self.episode_sums["ang_vel_z"] += rew_ang_vel_z
-        self.episode_sums["torque"] += rew_torque 
-        self.episode_sums["air_time"] += rew_airTime 
-        self.episode_sums["action_rate"] += rew_action_rate
+        self.episode_reward_sums["lin_vel_x"] += rew_lin_vel_x
+        self.episode_reward_sums["lin_vel_y"] += rew_lin_vel_y
+        self.episode_reward_sums["ang_vel_z"] += rew_ang_vel_z
+        self.episode_reward_sums["torque"] += rew_torque 
+        self.episode_reward_sums["air_time"] += rew_airTime 
+        self.episode_reward_sums["action_rate"] += rew_action_rate
         return
 
 #####################################################################
