@@ -24,7 +24,7 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [512, 512, 128]
+      units: [512, 512, 512]
       activation: elu
       d2rl: False
 

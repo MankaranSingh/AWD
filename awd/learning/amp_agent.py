@@ -162,6 +162,12 @@ class AMPAgent(common_agent.CommonAgent):
         for k, v in amp_rewards.items():
             batch_dict[k] = a2c_common.swap_and_flatten01(v)
 
+        episode_rewards = infos.get("episode", None)
+        if episode_rewards:
+            batch_dict["episode"] = {}
+            for key in episode_rewards.keys():
+                batch_dict["episode"][key] = episode_rewards[key]
+
         return batch_dict
     
     def play_steps_rnn(self):
@@ -725,6 +731,8 @@ class AMPAgent(common_agent.CommonAgent):
     def _record_train_batch_info(self, batch_dict, train_info):
         super()._record_train_batch_info(batch_dict, train_info)
         train_info['disc_rewards'] = batch_dict['disc_rewards']
+        if batch_dict.get("episode", None):
+            train_info["episode"] = batch_dict["episode"]
         return
 
     def _log_train_info(self, train_info, frame):
@@ -738,6 +746,11 @@ class AMPAgent(common_agent.CommonAgent):
         self.writer.add_scalar('info/disc_demo_logit', torch_ext.mean_list(train_info['disc_demo_logit']).item(), frame)
         self.writer.add_scalar('info/disc_grad_penalty', torch_ext.mean_list(train_info['disc_grad_penalty']).item(), frame)
         self.writer.add_scalar('info/disc_logit_loss', torch_ext.mean_list(train_info['disc_logit_loss']).item(), frame)
+
+        episode_rewards = train_info.get("episode", None)
+        if episode_rewards:
+            for key in episode_rewards.keys():
+                self.writer.add_scalar(f'info/{key}', episode_rewards[key], frame)
 
         disc_reward_std, disc_reward_mean = torch.std_mean(train_info['disc_rewards'])
         self.writer.add_scalar('info/disc_reward_mean', disc_reward_mean.item(), frame)

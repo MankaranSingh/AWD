@@ -210,6 +210,7 @@ class DucklingAMP(Duckling):
                = self._motion_lib.get_motion_state(motion_ids, motion_times)
         
         if self.custom_origins:
+            self.update_terrain_level(env_ids)
             root_pos += self._initial_duckling_root_states[env_ids][:, :3]
 
         self._set_env_state(env_ids=env_ids, 

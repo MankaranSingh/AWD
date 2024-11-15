@@ -11,7 +11,7 @@ env:
   controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.5
-  numAMPObsSteps: 10
+  numAMPObsSteps: 15
   
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
@@ -40,7 +40,7 @@ env:
     linearVelocityXYRewardScale: [1.0, 0.5]
     angularVelocityZRewardScale: 0.5
     torqueRewardScale: -0.001
-    feetAirTimeRewardScale: 0.1
+    feetAirTimeRewardScale: 0.2
     actionRateRewardScale: -0.005
 
     # normalization
@@ -49,9 +49,9 @@ env:
     useAverageVelocities: True
 
   randomCommandVelocityRanges:
-    linear_x: [-0.8, 0.8] # min max [m/s]
-    linear_y: [-0.5, 0.5]   # min max [m/s]
-    yaw: [-0.8, 0.8]          # min max [rad/s]
+    linear_x: [-0.3, 0.4] # min max [m/s]
+    linear_y: [-0.4, 0.4]   # min max [m/s]
+    yaw: [-0.6, 0.6]          # min max [rad/s]
   
   terrain:
     terrainType: trimesh # plane, or trimesh

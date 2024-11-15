@@ -1,12 +1,6 @@
 import torch
 
-import env.tasks.duckling as duckling
-import env.tasks.duckling_amp as duckling_amp
 import env.tasks.duckling_amp_task as duckling_amp_task
-from utils import torch_utils
-
-from isaacgym import gymapi
-from isaacgym import gymtorch
 from isaacgym.torch_utils import *
 
 TAR_ACTOR_ID = 1
@@ -33,6 +27,10 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.rew_scales["torque"] = self.cfg["env"]["learn"]["torqueRewardScale"]
         self.rew_scales["air_time"] = self.cfg["env"]["learn"]["feetAirTimeRewardScale"]
         self.rew_scales["action_rate"] = self.cfg["env"]["learn"]["actionRateRewardScale"]
+
+        # reward episode sums
+        self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
+                             for name in self.rew_scales.keys()}
 
         # randomization
         self.randomization_params = self.cfg["task"]["randomization_params"]
@@ -113,6 +111,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         # set small commands to zero
         self.commands[env_ids, :2] *= (torch.norm(self.commands[env_ids, :2], dim=1) > 0.2).unsqueeze(1)
         self._command_change_steps[env_ids] = self.progress_buf[env_ids] + change_steps
+
         return
 
     def update_terrain_level(self, env_ids):
@@ -120,10 +119,11 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
             # don't change on initial reset
             return
         # distance = torch.norm(self._duckling_root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1)
-        # self.terrain_levels[env_ids] -= 1 * (distance < torch.norm(self.commands[env_ids, :2])*self.max_episode_length_s*0.25)
-        # self.terrain_levels[env_ids] += 1 * (distance > self.terrain.env_length / 2)
-        # self.terrain_levels[env_ids] = torch.clip(self.terrain_levels[env_ids], 0) % self.terrain.env_rows
+        # self.terrain_levels[env_ids] -= 1 * (distance < torch.norm(self.commands[env_ids, :2])*self.max_episode_length_s*0.1)
+        # self.terrain_levels[env_ids] += 1 * (distance > self.terrain.env_length / 4)
+        # self.terrain_levels[env_ids] = torch.clip(self.terrain_levels[env_ids], 0, self.terrain.env_rows)
         # self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids], self.terrain_types[env_ids]]
+        # self._initial_duckling_root_states[env_ids, :3] = self.env_origins[env_ids]
 
     def _compute_task_obs(self, env_ids=None):
         if (env_ids is None):
@@ -143,8 +143,16 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
 
         # action rate penalty
         rew_action_rate = torch.sum(torch.square(self.last_actions - self.actions), dim=1) * self.rew_scales["action_rate"]
+        rew_lin_vel_x, rew_lin_vel_y, rew_ang_vel_z, rew_torque = compute_task_reward(self._duckling_root_states, self.commands,  self.torques, self.avg_velocities, self.rew_scales, self.use_average_velocities)
 
-        self.rew_buf[:] = compute_task_reward(self._duckling_root_states, self.commands,  self.torques, self.avg_velocities, self.rew_scales, self.use_average_velocities) + rew_action_rate + rew_airTime
+        self.rew_buf[:] = torch.clip(rew_lin_vel_x + rew_lin_vel_y + rew_ang_vel_z + rew_torque, 0., None) + rew_action_rate + rew_airTime
+
+        self.episode_sums["lin_vel_x"] += rew_lin_vel_x
+        self.episode_sums["lin_vel_y"] += rew_lin_vel_y
+        self.episode_sums["ang_vel_z"] += rew_ang_vel_z
+        self.episode_sums["torque"] += rew_torque 
+        self.episode_sums["air_time"] += rew_airTime 
+        self.episode_sums["action_rate"] += rew_action_rate
         return
 
 #####################################################################
@@ -162,8 +170,7 @@ def compute_task_reward(
     rew_scales,
     use_average_velocities
 ):
-    # (reward, reset, feet_in air, feet_air_time, episode sums)
-    # type: (Tensor, Tensor, Tensor, Tensor, Dict[str, float], bool) -> Tensor
+    # type: (Tensor, Tensor, Tensor, Tensor, Dict[str, float], bool) -> Tuple[Tensor, Tensor, Tensor, Tensor]
 
     # prepare quantities (TODO: return from obs ?)
     base_quat = root_states[:, 3:7]
@@ -185,8 +192,4 @@ def compute_task_reward(
     # torque penalty
     rew_torque = torch.sum(torch.square(torques), dim=1) * rew_scales["torque"]
 
-    total_reward = rew_lin_vel_x + rew_lin_vel_y + rew_ang_vel_z + rew_torque
-    total_reward = torch.clip(total_reward, 0., None)
-
-    #print("task reward:", total_reward)
-    return total_reward
+    return rew_lin_vel_x, rew_lin_vel_y, rew_ang_vel_z, rew_torque
