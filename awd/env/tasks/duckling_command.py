@@ -27,6 +27,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.rew_scales["torque"] = self.cfg["env"]["learn"]["torqueRewardScale"]
         self.rew_scales["air_time"] = self.cfg["env"]["learn"]["feetAirTimeRewardScale"]
         self.rew_scales["action_rate"] = self.cfg["env"]["learn"]["actionRateRewardScale"]
+        self.rew_scales["standstill"] = self.cfg["env"]["learn"]["standStillRewardScale"]
 
         # reward episode sums
         self.episode_reward_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
@@ -109,7 +110,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.commands_y[env_ids] = torch_rand_float(self.command_y_range[0], self.command_y_range[1], (len(env_ids), 1), device=self.device).squeeze()
         self.commands_yaw[env_ids] = torch_rand_float(self.command_yaw_range[0], self.command_yaw_range[1], (len(env_ids), 1), device=self.device).squeeze()
         # set small commands to zero
-        self.commands[env_ids, :2] *= (torch.norm(self.commands[env_ids, :2], dim=1) > 0.2).unsqueeze(1)
+        self.commands[env_ids, :2] *= (torch.norm(self.commands[env_ids, :2], dim=1) > 0.1).unsqueeze(1)
         self._command_change_steps[env_ids] = self.progress_buf[env_ids] + change_steps
 
         return
@@ -145,7 +146,10 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         rew_action_rate = torch.sum(torch.square(self.last_actions - self.actions), dim=1) * self.rew_scales["action_rate"]
         rew_lin_vel_x, rew_lin_vel_y, rew_ang_vel_z, rew_torque = compute_task_reward(self._duckling_root_states, self.commands,  self.torques, self.avg_velocities, self.rew_scales, self.use_average_velocities)
 
-        self.rew_buf[:] = torch.clip(rew_lin_vel_x + rew_lin_vel_y + rew_ang_vel_z + rew_torque, 0., None) + rew_action_rate + rew_airTime
+        # Penalize motion at zero commands
+        rew_standstill = (torch.sum(torch.abs(self.dof_pos - self.default_dof_pos), dim=1) * (torch.norm(self.commands[:, :2], dim=1) < 0.1)) * self.rew_scales["standstill"]
+    
+        self.rew_buf[:] = torch.clip(rew_lin_vel_x + rew_lin_vel_y + rew_ang_vel_z + rew_torque, 0., None) + rew_action_rate + rew_airTime + rew_standstill
 
         self.episode_reward_sums["lin_vel_x"] += rew_lin_vel_x
         self.episode_reward_sums["lin_vel_y"] += rew_lin_vel_y
@@ -153,6 +157,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.episode_reward_sums["torque"] += rew_torque 
         self.episode_reward_sums["air_time"] += rew_airTime 
         self.episode_reward_sums["action_rate"] += rew_action_rate
+        self.episode_reward_sums["standstill"] += rew_standstill
         return
 
 #####################################################################
