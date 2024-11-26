@@ -78,8 +78,10 @@ class DucklingViewMotion(DucklingAMP):
         motion_ids = self._motion_ids
         motion_times = self.progress_buf * self._motion_dt
 
-        root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
+        root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos, foot_contacts \
            = self._motion_lib.get_motion_state(motion_ids, motion_times)
+        
+        #print(foot_contacts)
         
         self.accumulated_key_pos_anim.append(key_pos.detach().cpu().numpy())
         self.accumulated_key_pos_sim.append(self._rigid_body_pos[:, self._key_body_ids, :].detach().cpu().numpy())

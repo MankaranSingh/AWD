@@ -222,9 +222,13 @@ class PlacoWalkEngine:
 
     def get_current_support_phase(self):
         if self.trajectory.support_is_both(self.t):
-            return "both"
-
-        return self.trajectory.support_side(self.t)
+            return [1, 1]
+        elif str(self.trajectory.support_side(self.t)) == "left":
+            return [1, 0]
+        elif str(self.trajectory.support_side(self.t)) == "right":
+            return [0, 1]
+        else:
+            raise AssertionError(f"Invalid phase: {self.trajectory.support_side(self.t)}")
 
     def tick(self, dt, left_contact=True, right_contact=True):
         if self.start is None:

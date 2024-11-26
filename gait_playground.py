@@ -523,6 +523,8 @@ def gait_generator_thread():
                     (np.array(right_toe_pos) - np.array(prev_right_toe_pos)) / (1 / FPS)
                 )
 
+                foot_contacts = pwe.get_current_support_phase()
+
                 if prev_initialized:
                     if gait.hardware:
                         episode["Frames"].append(
@@ -536,6 +538,7 @@ def gait_generator_thread():
                             + joints_vel
                             + left_toe_vel
                             + right_toe_vel
+                            + foot_contacts
                         )
                     else:
                         episode["Frames"].append(

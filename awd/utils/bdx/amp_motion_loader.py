@@ -75,7 +75,7 @@ class AMPLoader:
                 )
                 self.trajectories_full.append(
                     torch.tensor(
-                        motion_data[:, : self.JOINT_VEL_END_IDX],
+                        motion_data[:, :],
                         dtype=torch.float32,
                         device=device,
                     )
@@ -145,7 +145,6 @@ class AMPLoader:
 
         print(f"frame_offset: {frame_offset}")
         print(f"frame_size:   {frame_size}")
-        print(frame_size['root_pos'])
         self.POS_SIZE = int(frame_size['root_pos'])
         self.ROT_SIZE = int(frame_size['root_quat'])
         self.JOINT_POS_SIZE = int(frame_size['joints_pos'])
@@ -156,6 +155,7 @@ class AMPLoader:
         self.JOINT_VEL_SIZE = int(frame_size['joints_vel'])
         self.LEFT_TOE_VEL_LOCAL_SIZE = int(frame_size['left_toe_vel'])
         self.RIGHT_TOE_VEL_LOCAL_SIZE = int(frame_size['right_toe_vel'])
+        self.FOOT_CONTACTS_SIZE = int(frame_size['foot_contacts'])
 
         self.ROOT_POS_START_IDX = int(frame_offset['root_pos'])
         self.ROOT_POS_END_IDX = self.ROOT_POS_START_IDX + self.POS_SIZE
@@ -186,6 +186,9 @@ class AMPLoader:
 
         self.RIGHT_TOE_VEL_LOCAL_START_IDX = int(frame_offset['right_toe_vel'])
         self.RIGHT_TOE_VEL_LOCAL_END_IDX = self.RIGHT_TOE_VEL_LOCAL_START_IDX + self.RIGHT_TOE_VEL_LOCAL_SIZE
+
+        self.FOOT_CONTACTS_START_IDX = int(frame_offset['foot_contacts'])
+        self.FOOT_CONTACTS_END_IDX = self.FOOT_CONTACTS_START_IDX + self.FOOT_CONTACTS_SIZE
 
     def reorder_from_pybullet_to_isaac(self, motion_data):
         """Convert from PyBullet ordering to Isaac ordering.
@@ -336,6 +339,12 @@ class AMPLoader:
             self.JOINT_VEL_END_IDX - self.JOINT_POSE_START_IDX,
             device=self.device,
         )
+        foot_contacts = torch.zeros(
+            len(traj_idxs),
+            self.FOOT_CONTACTS_END_IDX - self.FOOT_CONTACTS_START_IDX,
+            device=self.device,
+        )
+
         for traj_idx in set(traj_idxs):
             trajectory = self.trajectories_full[traj_idx]
             traj_mask = traj_idxs == traj_idx
@@ -357,6 +366,9 @@ class AMPLoader:
             all_frame_amp_ends[traj_mask] = trajectory[idx_high[traj_mask]][
                 :, self.JOINT_POSE_START_IDX : self.JOINT_VEL_END_IDX
             ]
+            foot_contacts[traj_mask] = trajectory[idx_high[traj_mask]][
+                :, self.FOOT_CONTACTS_START_IDX : self.FOOT_CONTACTS_END_IDX
+            ]
 
         blend = torch.tensor(
             p * n - idx_low, device=self.device, dtype=torch.float32
@@ -369,7 +381,7 @@ class AMPLoader:
         )
         
         amp_blend = self.slerp(all_frame_amp_starts, all_frame_amp_ends, blend)
-        return torch.cat([pos_blend, rot_blend, amp_blend], dim=-1)
+        return torch.cat([pos_blend, rot_blend, amp_blend, foot_contacts], dim=-1)
 
     def get_frame(self):
         """Returns random frame."""
@@ -540,11 +552,12 @@ class AMPLoader:
         dof_vel = self.get_joint_vel_batch(frames)
         key_pos0 = self.get_left_toe_pos_local_batch(frames)
         key_pos1 = self.get_right_toe_pos_local_batch(frames)
+        foot_contacts = self.get_foot_contacts_batch(frames)
 
         # key_pos0[:, 2] += 0.01
         # key_pos1[:, 2] += 0.01
 
-        return root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, torch.cat((key_pos0.unsqueeze(1), key_pos1.unsqueeze(1)), dim=1) 
+        return root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, torch.cat((key_pos0.unsqueeze(1), key_pos1.unsqueeze(1)), dim=1), foot_contacts 
 
     @property
     def observation_dim(self):
@@ -629,4 +642,15 @@ class AMPLoader:
         return poses[
             :,
             self.RIGHT_TOE_VEL_LOCAL_START_IDX : self.RIGHT_TOE_VEL_LOCAL_END_IDX,
+        ]
+    
+    def get_foot_contacts(self, poses):
+        return poses[
+            self.FOOT_CONTACTS_START_IDX : self.FOOT_CONTACTS_END_IDX,
+        ]
+    
+    def get_foot_contacts_batch(self, poses):
+        return poses[
+            :,
+            -2:,
         ]

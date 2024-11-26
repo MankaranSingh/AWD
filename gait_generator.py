@@ -262,6 +262,8 @@ while True:
             (np.array(right_toe_pos) - np.array(prev_right_toe_pos)) / (1 / FPS)
         )
 
+        foot_contacts = pwe.get_current_support_phase()
+
         if prev_initialized:
             if args.hardware:
                 episode["Frames"].append(
@@ -275,6 +277,7 @@ while True:
                     + joints_vel
                     + left_toe_vel
                     + right_toe_vel
+                    + foot_contacts
                 )
             else:
                 episode["Frames"].append(
@@ -310,6 +313,8 @@ while True:
                 offset = offset + len(left_toe_vel)
                 offset_right_toe_vel = offset
                 offset = offset + len(right_toe_vel)
+                offset_foot_contacts = offset
+                offset = offset + len(foot_contacts)
 
                 episode["Joints"] = list(pwe.get_angles().keys())
                 episode["Frame_offset"].append(
@@ -324,6 +329,7 @@ while True:
                         "joints_vel": offset_joints_vel,
                         "left_toe_vel": offset_left_toe_vel,
                         "right_toe_vel": offset_right_toe_vel,
+                        "foot_contacts": offset_foot_contacts,
                     }
                 )
                 episode["Frame_size"].append(
@@ -338,6 +344,7 @@ while True:
                         "joints_vel": len(joints_vel),
                         "left_toe_vel": len(left_toe_vel),
                         "right_toe_vel": len(right_toe_vel),
+                        "foot_contacts": len(foot_contacts),
                     }
                 )
 
