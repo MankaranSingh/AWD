@@ -914,7 +914,7 @@ class Terrain:
                     if choice < 0.05:
                         slope *= -1
                         slope /= 1.5
-                    pyramid_sloped_terrain(terrain, slope=slope/2, platform_size=3.0)
+                    pyramid_sloped_terrain(terrain, slope=slope/2, platform_size=2.0)
                 elif choice < self.proportions[1]:
                     if choice < 0.15:
                         slope *= -1
@@ -933,7 +933,7 @@ class Terrain:
                         terrain,
                         step_width=0.75,
                         step_height=step_height/2,
-                        platform_size=3.0,
+                        platform_size=2.0,
                     )
                 elif choice < self.proportions[4]:
                     discrete_obstacles_terrain(
