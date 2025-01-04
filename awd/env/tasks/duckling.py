@@ -109,8 +109,11 @@ class Duckling(BaseTask):
         
         self._duckling_root_states = self._root_states.view(self.num_envs, num_actors, actor_root_state.shape[-1])[..., 0, :]
         self._initial_duckling_root_states = self._duckling_root_states.clone()
-        # self._initial_duckling_root_states[:, 7:13] = 0
-        # self._initial_duckling_root_states[:, 2] = 0 if self.cfg["env"]["terrain"]["terrainType"] == "plane" else self.cfg["env"]["terrain"]["maxHeight"]
+        self._initial_duckling_root_states[:, 7:13] = 0
+        self._initial_duckling_root_states[:, 2] = self.cfg["env"].get("initHeight", 0.0)
+        self._initial_duckling_root_states[:, 3:7] = torch.Tensor(
+            self.cfg["env"].get("initQuat", [0, 0, 0, 1])
+        ).to(self.device)
 
         self._duckling_actor_ids = num_actors * torch.arange(self.num_envs, device=self.device, dtype=torch.int32)
 
@@ -119,8 +122,18 @@ class Duckling(BaseTask):
         dofs_per_env = self._dof_state.shape[0] // self.num_envs
         self._dof_pos = self._dof_state.view(self.num_envs, dofs_per_env, 2)[..., :self.num_dof, 0]
         self._dof_vel = self._dof_state.view(self.num_envs, dofs_per_env, 2)[..., :self.num_dof, 1]
+
+        self._default_dof_pos = torch.zeros_like(
+            self._dof_pos, device=self.device, dtype=torch.float
+        )
+
+        props = self._get_asset_properties()
+        for i, name in enumerate(props["init_pos"]):
+            angle = props["init_pos"][name]
+            self._default_dof_pos[:, i] = angle
         
         self._initial_dof_pos = torch.zeros_like(self._dof_pos, device=self.device, dtype=torch.float)
+        self._initial_dof_pos[:, :] = self._default_dof_pos
         self._initial_dof_vel = torch.zeros_like(self._dof_vel, device=self.device, dtype=torch.float)
         
         self._rigid_body_state = gymtorch.wrap_tensor(rigid_body_state)
@@ -167,7 +180,7 @@ class Duckling(BaseTask):
             get_axis_params(-1.0, self.up_axis_idx), device=self.device
         ).repeat((self.num_envs, 1))
 
-        self.projected_gravity = quat_rotate_inverse(self._root_states[:, 3:7], self.gravity_vec)
+        self.projected_gravity = quat_rotate_inverse(self._duckling_root_states[:, 3:7], self.gravity_vec)
         
         if self.viewer != None:
             self._init_camera()
@@ -644,7 +657,7 @@ class Duckling(BaseTask):
         self.velocities_history[:, : 6 * (self.num_steps_per_period - 1)] = self.velocities_history[:, 6 : 6 * self.num_steps_per_period]
 
         # add
-        self.velocities_history[:, -6:] = self._root_states[:, 7:13]
+        self.velocities_history[:, -6:] = self._duckling_root_states[:, 7:13]
 
         # reshape velocities_history so that its (num_envs, num_steps_per_period, 6)
         self.velocities_history_reshaped = self.velocities_history.view(
@@ -654,7 +667,7 @@ class Duckling(BaseTask):
         # Compute average velocities for each environment
         self.avg_velocities = torch.mean(self.velocities_history_reshaped, dim=1)
 
-        self.projected_gravity = quat_rotate_inverse(self._root_states[:, 3:7], self.gravity_vec)
+        self.projected_gravity = quat_rotate_inverse(self._duckling_root_states[:, 3:7], self.gravity_vec)
 
         self._refresh_sim_tensors()
         self._compute_observations()
@@ -725,7 +738,7 @@ class Duckling(BaseTask):
         return mask_joint_ids, joint_ids
 
     def _action_to_pd_targets(self, action):
-        pd_tar = self._pd_action_offset + self._pd_action_scale * action
+        pd_tar = self._pd_action_offset + self._pd_action_scale * action 
         return pd_tar
 
     def _init_camera(self):
@@ -1172,7 +1185,7 @@ def compute_duckling_reset(reset_buf, progress_buf, contact_buf, contact_body_id
         fall_height[:, contact_body_ids] = False
         fall_height = torch.any(fall_height, dim=-1)
 
-        has_fallen = fall_contact # torch.logical_or(fall_contact, fall_height)
+        has_fallen = fall_contact #fall_contact # torch.logical_or(fall_contact, fall_height)
 
         # first timestep can sometimes still have nonzero contact forces
         # so only check after first couple of steps

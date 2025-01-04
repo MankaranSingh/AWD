@@ -19,11 +19,18 @@ class PlacoWalkEngine:
         model_filename: str = "go_bdx.urdf",
         init_params: dict = {},
         ignore_feet_contact: bool = False,
+        knee_limits: list = None,
     ) -> None:
         model_filename = os.path.join(asset_path, model_filename)
         self.asset_path = asset_path
         self.model_filename = model_filename
         self.ignore_feet_contact = ignore_feet_contact
+
+        robot_type = asset_path.split("/")[-1]
+        if robot_type in ["mini_bdx", "go_bdx"]:
+            knee_limits = knee_limits or [-0.2, -0.01]
+        else:
+            knee_limits = knee_limits or [0.2, 0.01]
 
         # Loading the robot
         self.robot = placo.HumanoidRobot(model_filename)
@@ -42,8 +49,8 @@ class PlacoWalkEngine:
         self.solver.enable_joint_limits(False)
         self.solver.dt = DT / REFINE
 
-        self.robot.set_joint_limits("left_knee", -2, -0.01)
-        self.robot.set_joint_limits("right_knee", -2, -0.01)
+        self.robot.set_joint_limits("left_knee", *knee_limits)
+        self.robot.set_joint_limits("right_knee", *knee_limits)
 
         # Creating the walk QP tasks
         self.tasks = placo.WalkTasks()

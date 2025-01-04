@@ -116,14 +116,14 @@ def loop():
     # Updating the target
     head_target = default_head_transform.copy()
     # linear_range = [-0.02, 0.02] # forward/backward [m]
-    linear_range = [-0.04, 0.01] # up/down [m]
+    linear_range = [-0.04, 0.02] # up/down [m]
 
     # linear_range = [-10, 10] # roll [deg]
     # linear_range = [-15, 15] # pitch [deg]
     # linear_range = [-12, 12] # yaw [deg]
 
-    head_target[0, 3] += np.clip(0.15*np.sin(t), linear_range[0], linear_range[1])
-    head_target = rotate_matrix(head_target, np.clip(15*np.sin(t), -10, 10), "y")
+    head_target[0, 3] += 0.01*np.sin(t*10) + 0.02
+    #head_target = rotate_matrix(head_target, np.clip(15*np.sin(t), -10, 10), "y")
     # head_target = rotate_matrix(head_target, np.clip(15*np.sin(t), linear_range[0], linear_range[1]), "y")
     # head_target = rotate_matrix(head_target, np.clip(15*np.sin(t), linear_range[0], linear_range[1]), "x")
     effector_task.T_world_frame = head_target

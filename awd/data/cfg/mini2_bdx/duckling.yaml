@@ -1,0 +1,68 @@
+# if given, will override the device setting in gym. 
+env: 
+  numEnvs: 4096
+  envSpacing: 0.5
+  episodeLength: 300
+  isFlagrun: False
+  enableDebugVis: False
+  
+  pdControl: True
+  powerScale: 1.0
+  controlFrequencyInv: 2 # 30 Hz
+  stateInit: "Random"
+  hybridInitProb: 0.5
+  numAMPObsSteps: 10
+
+  localRootObs: False
+  keyBodies: [] # ["right_foot", "left_foot"]
+  contactBodies: ["right_foot", "left_foot"]
+  terminationHeight: 0.0
+  enableEarlyTermination: True
+
+  asset:
+    assetRoot: "awd/data/assets"
+    assetFileName: "mini2_bdx/mini2_bdx.urdf"
+
+  terrain:
+    terrainType: plane # plane, or trimesh
+    staticFriction: 1.0 # [-]
+    dynamicFriction: 1.0 # [-]
+    restitution: 0. # [-]
+    # rough terrain only:
+    curriculum: true
+    maxInitMapLevel: 2
+    mapLength: 15
+    mapWidth: 15
+    numLevels: 4
+    numTerrains: 10
+    # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
+    terrainProportions: [0.2, 0.2, 0.2, 0.2, 0.2]
+    # tri mesh only:
+    slopeTreshold: 0.8
+    horizontalScale: 0.25
+    verticalScale: 0.005
+    borderSize: 5
+    numPerEnv: 2
+    minHeight: -0.001
+    maxHeight: 0.001
+    step: 0.05
+    platformSize: 0.5 # pyramids
+    stepHeightRange: [-0.05, 0.05] # pyramid stairs
+    stepWidth: 0.1
+
+sim:
+  substeps: 2
+  physx:
+    num_threads: 4
+    solver_type: 1  # 0: pgs, 1: tgs
+    num_position_iterations: 4
+    num_velocity_iterations: 0
+    contact_offset: 0.02
+    rest_offset: 0.0
+    bounce_threshold_velocity: 0.2
+    max_depenetration_velocity: 10.0
+    default_buffer_size_multiplier: 10.0
+
+  flex:
+    num_inner_iterations: 10
+    warm_start: 0.25

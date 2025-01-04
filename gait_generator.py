@@ -52,6 +52,7 @@ parser.add_argument("--walk_max_dx_backward", type=float, default=None)
 parser.add_argument("-l", "--length", type=int, default=10)
 parser.add_argument("-m", "--meshcat_viz", action="store_true", default=False)
 parser.add_argument("--mini", action="store_true", default=False)
+parser.add_argument("--mini2", action="store_true", default=False)
 parser.add_argument("--debug", action="store_true", default=False)
 parser.add_argument("--preset", type=str, default="")
 parser.add_argument(
@@ -105,6 +106,10 @@ if args.mini:
     robot = 'mini_bdx'
     robot_urdf = "urdf/bdx.urdf"
     asset_path = "awd/data/assets/mini_bdx"
+elif args.mini2:
+    robot = 'mini2_bdx'
+    robot_urdf = "mini2_bdx.urdf"
+    asset_path = "awd/data/assets/mini2_bdx"
 else:
     robot = 'go_bdx'
     robot_urdf = "go_bdx.urdf"
@@ -191,8 +196,6 @@ while True:
         else:
             T_world_fbase = pwe.robot.get_T_world_fbase()
         root_position = list(T_world_fbase[:3, 3])
-        if not args.mini:
-            root_position[2] = round(root_position[2],1)
         #if center_y_pos is None:
         #    center_y_pos = root_position[1]
         root_position[1] = root_position[1] - center_y_pos

@@ -1,0 +1,124 @@
+joints:
+  - left_hip_yaw
+  - left_hip_roll
+  - left_hip_pitch
+  - left_knee
+  - left_ankle
+  - neck_pitch
+  - head_pitch
+  - head_yaw
+  # - left_antenna
+  # - right_antenna
+  - right_hip_yaw
+  - right_hip_roll
+  - right_hip_pitch
+  - right_knee
+  - right_ankle
+dof_body_ids: [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 13]
+dof_offsets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+# dof_offsets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+# 15*6 if using 6 dof per joint dof_to_obs in compute_duckling_observations
+# dof_obs_size: 90
+# num_obs: 108
+
+dof_obs_size: 13
+num_obs: 42 # + 5 ???
+
+num_actions: 13
+
+# 1 + 15 * (3 + 6 + 3 + 3) - 3 ???
+# num_obs: 125 # + 5 ???
+# motor_efforts:
+#   [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8]
+motor_efforts: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+
+#13 + dof_obs_size + 28 + 3 * num_key_bodies # [root_h, root_rot, root_vel, root_ang_vel, dof_pos, dof_vel, key_body_pos]
+num_amp_obs_per_step: 47
+
+# friction: 0.1
+# angular_damping: 0.0
+# armature: 0.004
+# thickness: 0.001
+
+# friction: 0.19
+# angular_damping: 0.0
+# armature: 0.012
+# thickness: 0.001
+
+# used for custom pd control
+p_gains: 10
+d_gains: 0.2
+max_effort: 3
+max_velocity: 5.2
+
+# p_gains: 19.6
+# d_gains: 1.44
+# max_effort: 3.69
+# max_velocity: 4.7
+
+# Used for isaac pd control
+damping:
+  # left_antenna: 1
+  left_hip_pitch: 1
+  left_hip_roll: 1
+  left_hip_yaw: 1
+  left_knee: 1
+  left_ankle: 1
+  neck_pitch: 1
+  head_pitch: 1
+  head_yaw: 1
+  # right_antenna: 1
+  right_hip_pitch: 1
+  right_hip_roll: 1
+  right_hip_yaw: 1
+  right_knee: 1
+  right_ankle: 1
+stiffness:
+  # left_antenna: 5
+  left_hip_pitch: 5
+  left_hip_roll: 5
+  left_hip_yaw: 5
+  left_knee: 5
+  left_ankle: 5
+  neck_pitch: 8
+  head_pitch: 5
+  head_yaw: 5
+  # right_antenna: 5
+  right_hip_pitch: 5
+  right_hip_roll: 5
+  right_hip_yaw: 5
+  right_knee: 5
+  right_ankle: 5
+
+# init_pos:
+#   left_hip_yaw: -0.002853397830292128
+#   left_hip_roll: 0.01626303761810685
+#   left_hip_pitch: 1.0105624704499077
+#   left_knee: -1.4865015965817336
+#   left_ankle": 0.6504953719748071
+#   neck_pitch: -0.17453292519943295
+#   head_pitch: -0.17453292519943295
+#   head_yaw: 0
+#   # left_antenna: 0
+#   # right_antenna: 0
+#   right_hip_yaw: 0.001171696610228082
+#   right_hip_roll: 0.006726989242258406
+#   right_hip_pitch: 1.0129772861831692
+#   right_knee: -1.4829304760981399
+#   right_ankle: 0.6444901047812701
+
+init_pos:
+  left_hip_yaw: 0.002829999662935734
+  left_hip_roll: 0.053439997136592865
+  left_hip_pitch: -0.6361600160598755
+  left_knee: 1.3680399656295776
+  left_ankle: -0.784309983253479
+  neck_pitch: -0.0
+  head_pitch: -0.0
+  head_yaw: 0.0
+  right_hip_yaw: -0.0034600000362843275
+  right_hip_roll: -0.06544999778270721
+  right_hip_pitch: 0.6358000040054321
+  right_knee: 1.3793799877166748
+  right_ankle: -0.7960500121116638

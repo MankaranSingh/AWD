@@ -1,0 +1,1048 @@
+<robot name="onshape">
+    <mujoco>
+        <compiler fusestatic="false"/>
+    </mujoco>
+    <link name="trunk_assembly">
+        <visual>
+            <origin xyz="-0.05598077206317018939 -0.0063972335546750519822 0.043340577621247350359" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./body_front.stl"/>
+            </geometry>
+            <material name="body_front_material">
+                <color rgba="0.91764705882352937127 0.91764705882352937127 0.91764705882352937127 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.05598077206317018939 -0.0063972335546750519822 0.043340577621247350359" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./body_front.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.055980772063170231023 -0.0063972335546750485127 0.043340577621247343421" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./body_back.stl"/>
+            </geometry>
+            <material name="body_back_material">
+                <color rgba="0.91764705882352937127 0.91764705882352937127 0.91764705882352937127 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.055980772063170231023 -0.0063972335546750485127 0.043340577621247343421" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./body_back.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.05598077206317018939 -0.0063972335546750571864 0.043340577621247336482" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./body_middle_bottom.stl"/>
+            </geometry>
+            <material name="body_middle_bottom_material">
+                <color rgba="0.91764705882352937127 0.91764705882352937127 0.91764705882352937127 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.05598077206317018939 -0.0063972335546750571864 0.043340577621247336482" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./body_middle_bottom.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.05598077206317018939 -0.0063972335546750519822 0.043340577621247350359" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./body_middle_top.stl"/>
+            </geometry>
+            <material name="body_middle_top_material">
+                <color rgba="0.91764705882352937127 0.91764705882352937127 0.91764705882352937127 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.05598077206317018939 -0.0063972335546750519822 0.043340577621247350359" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./body_middle_top.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.055980772063170154695 -0.0063972335546723128538 0.043340577621247856899" rpy="-6.2366778928045531925e-14 0.021825623709755263835 1.3218914851019458339e-13" />
+            <geometry>
+                <mesh filename="./roll_bearing.stl"/>
+            </geometry>
+            <material name="roll_bearing_material">
+                <color rgba="0.5999999999999999778 0.5999999999999999778 0.5999999999999999778 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.055980772063170182451 -0.0063972335546750571864 0.043340577621247357298" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./trunk_bottom.stl"/>
+            </geometry>
+            <material name="trunk_bottom_material">
+                <color rgba="0.18039215686274509554 0.18039215686274509554 0.18039215686274509554 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.055980772063170182451 -0.0063972335546750571864 0.043340577621247364237" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./trunk_top.stl"/>
+            </geometry>
+            <material name="trunk_top_material">
+                <color rgba="0.18039215686274509554 0.18039215686274509554 0.18039215686274509554 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.055980772063170182451 -0.0063972335546750571864 0.043340577621247364237" rpy="-6.3086333636868837384e-14 0.021825623709755253427 1.3209498708375492755e-13" />
+            <geometry>
+                <mesh filename="./trunk_top.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.055980772063160808005 -0.076397233554672344669 0.043340577621252214524" rpy="-6.2366778928045531925e-14 0.021825623709755263835 1.3218914851019458339e-13" />
+            <geometry>
+                <mesh filename="./roll_bearing.stl"/>
+            </geometry>
+            <material name="roll_bearing_material">
+                <color rgba="0.5999999999999999778 0.5999999999999999778 0.5999999999999999778 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.03599404677005076103 0.0033027664453275464886 0.042514192688343672988" rpy="-3.1415926535869034275 1.5489707030851413982 -3.1415926535867706448" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.03599404677005114267 0.0062027664453275562634 0.042514192688343485638" rpy="-3.1415926535869034275 1.5489707030851413982 -3.1415926535867706448" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.081682025705692440365 -0.04139723355467640753 0.034399349450439140052" rpy="-1.5707963267948341635 -0.021825623709755267304 -3.1415926535896612215" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.081745314989446954401 -0.041397233554676629574 0.031500040141903419555" rpy="-1.5707963267948341635 -0.021825623709755267304 -3.1415926535896612215" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.081682025705701752361 0.028602766445323585254 0.034399349450434775488" rpy="-1.5707963267948343855 -0.021825623709755267304 -3.1415926535896612215" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.081745314989456252519 0.028602766445323394434 0.031500040141899013357" rpy="-1.5707963267948343855 -0.021825623709755267304 -3.1415926535896612215" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="-0.06477282125534346291 -0.0062864852796735669338 0.018840200220953451371" rpy="0 0 0"/>
+            <mass value="0.55922072109020470876" />
+            <inertia ixx="0.0016158272658491415474" ixy="-1.7784836456861689647e-06"  ixz="9.2172185580655210989e-05" iyy="0.0022566158373532566213" iyz="-1.8436732306295948336e-06" izz="0.0017966070502012921033" />
+        </inertial>
+    </link>
+    <link name="trunk">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="1e-9" />
+            <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+        </inertial>
+    </link>
+    <joint name="trunk_frame" type="fixed">
+        <origin xyz="-0.060471084556686989508 -0.0063972335546741820184 0.066744147727335195741" rpy="-6.3086333636868837384e-14 0.021825623709755163221 1.3209498708375492755e-13" />
+        <parent link="trunk_assembly" />
+        <child link="trunk" />
+        <axis xyz="0 0 0"/>
+    </joint>
+    <link name="hip_roll_assembly">
+        <visual>
+            <origin xyz="1.873501354054951662e-16 -0.035109753291691865595 0.019049999999999997491" rpy="-7.3623687479130935567e-23 -1.2952659607191342098e-18 -6.4532279329948616371e-16" />
+            <geometry>
+                <mesh filename="./roll_motor_bottom.stl"/>
+            </geometry>
+            <material name="roll_motor_bottom_material">
+                <color rgba="0.64705882352941179736 0.64705882352941179736 0.64705882352941179736 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0 -0.034999999999999996392 0.019050000000000011369" rpy="-1.2861541435164642563e-29 -1.2952659607191342098e-18 -9.499445615869540676e-30" />
+            <geometry>
+                <mesh filename="./roll_motor_top.stl"/>
+            </geometry>
+            <material name="roll_motor_top_material">
+                <color rgba="0.90196078431372550543 0.90196078431372550543 0.90196078431372550543 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.0096000000000001223244 3.6429192995512948983e-15 -0.020515000000007277414" rpy="-1.570796326794503095 -1.5707963267946862818 0" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.01250000000000014988 3.5041414214731503307e-15 -0.020515000000007450887" rpy="-1.570796326794503095 -1.5707963267946862818 0" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="0.0008196843725795717895 -1.329100946310312077e-05 -0.033360058062022412972" rpy="0 0 0"/>
+            <mass value="0.066480000000000011307" />
+            <inertia ixx="2.497762279327461521e-05" ixy="1.9209452773752538984e-09"  ixz="-3.9025516239358283373e-07" iyy="2.8788668793262875775e-05" iyz="-2.0013937278672932576e-08" izz="1.4081855731866492094e-05" />
+        </inertial>
+    </link>
+    <link name="left_roll_to_pitch_assembly">
+        <visual>
+            <origin xyz="-0.03500000000000001027 -0.06500000000000000222 0.019050000000000025246" rpy="1.570796326794896558 1.570796326794896336 0" />
+            <geometry>
+                <mesh filename="./left_roll_to_pitch.stl"/>
+            </geometry>
+            <material name="left_roll_to_pitch_material">
+                <color rgba="0.90980392156862743835 0.57254901960784310155 0.16470588235294117418 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.03500000000000001027 -0.06500000000000000222 0.019050000000000025246" rpy="1.570796326794896558 1.570796326794896336 0" />
+            <geometry>
+                <mesh filename="./left_roll_to_pitch.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.064699999999998397682 1.2975731600306517066e-15 0.0096099999999987723021" rpy="1.570796326794896558 1.5707963267948958919 0" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.06759999999999928566 1.4016565685892601323e-15 0.0096099999999987514854" rpy="1.570796326794896558 1.5707963267948958919 0" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="0.050853966904842992647 -0.00041791981223753346545 0.020538563791099872374" rpy="0 0 0"/>
+            <mass value="0.075160000000000018461" />
+            <inertia ixx="2.5186414785901940707e-05" ixy="1.2358900380893059294e-07"  ixz="-3.6053616380158198209e-07" iyy="4.1351630492718815732e-05" iyz="-1.1090320695523219811e-07" izz="2.8114623436014163268e-05" />
+        </inertial>
+    </link>
+    <link name="knee_and_ankle_assembly">
+        <visual>
+            <origin xyz="0.016059999999995938635 0.064999999999999683031 0.11064999999999752811" rpy="-1.5707963267948978903 4.2016399173828271874e-29 -8.3178356339724608815e-19" />
+            <geometry>
+                <mesh filename="./left_cache.stl"/>
+            </geometry>
+            <material name="left_cache_material">
+                <color rgba="0.91764705882352937127 0.91764705882352937127 0.91764705882352937127 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016059999999995938635 0.064999999999999683031 0.11064999999999752811" rpy="-1.5707963267948978903 4.2016399173828271874e-29 -8.3178356339724608815e-19" />
+            <geometry>
+                <mesh filename="./left_cache.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016059999999989214847 0.14364999999999922276 0.10924999999999837619" rpy="-1.5707963267948976682 4.3569346390328978304e-29 -4.2995778826643357065e-18" />
+            <geometry>
+                <mesh filename="./leg_spacer.stl"/>
+            </geometry>
+            <material name="leg_spacer_material">
+                <color rgba="0.64705882352941179736 0.64705882352941179736 0.64705882352941179736 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016059999999989214847 0.14364999999999922276 0.10924999999999837619" rpy="-1.5707963267948976682 4.3569346390328978304e-29 -4.2995778826643357065e-18" />
+            <geometry>
+                <mesh filename="./leg_spacer.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000011766 0.14364999999999997216 0.10914999999999995539" rpy="-1.57079632679489678 -4.7310692570706016668e-29 -4.2888357702018685573e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_right_sheet.stl"/>
+            </geometry>
+            <material name="left_knee_to_ankle_right_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000011766 0.14364999999999997216 0.10914999999999995539" rpy="-1.57079632679489678 -4.7310692570706016668e-29 -4.2888357702018685573e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_right_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000004827 0.14364999999999999991 0.10914999999999992764" rpy="-1.57079632679489678 -4.8087166178956372685e-29 -8.2021513459152036116e-19" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_left_sheet.stl"/>
+            </geometry>
+            <material name="left_knee_to_ankle_left_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000004827 0.14364999999999999991 0.10914999999999992764" rpy="-1.57079632679489678 -4.8087166178956372685e-29 -8.2021513459152036116e-19" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_left_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 -0.053150000000000016676 0.0095499999999999612976" rpy="-1.570796326794896558 2.6154963856480099487e-16 1.570796326794896558" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="4.1633363423443370266e-17 -0.053150000000000044431 0.0066499999999986292298" rpy="-1.570796326794896558 2.6154963856480099487e-16 1.570796326794896558" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="0.00056047910024031725226 -0.039612936197744912092 0.010958348047537634987" rpy="0 0 0"/>
+            <mass value="0.12406999999999994422" />
+            <inertia ixx="0.00020563536525052030488" ixy="-1.5494383196550236698e-05"  ixz="1.3054018834796302665e-06" iyy="7.2970054049715794538e-05" iyz="1.7774580673021327147e-05" izz="0.00021784327037383896682" />
+        </inertial>
+    </link>
+    <link name="knee_and_ankle_assembly_2">
+        <visual>
+            <origin xyz="0.01606000000000940009 0.14365000000000227587 0.10925000000000122113" rpy="-1.5707963267948961139 1.4029230489229300519e-17 1.7160481850182582567e-18" />
+            <geometry>
+                <mesh filename="./leg_spacer.stl"/>
+            </geometry>
+            <material name="leg_spacer_material">
+                <color rgba="0.64705882352941179736 0.64705882352941179736 0.64705882352941179736 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.01606000000000940009 0.14365000000000227587 0.10925000000000122113" rpy="-1.5707963267948961139 1.4029230489229300519e-17 1.7160481850182582567e-18" />
+            <geometry>
+                <mesh filename="./leg_spacer.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000046461 0.14364999999999999991 0.10914999999999995539" rpy="-1.57079632679489678 1.4029230489356396488e-17 1.6358954997209602705e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_right_sheet.stl"/>
+            </geometry>
+            <material name="left_knee_to_ankle_right_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000046461 0.14364999999999999991 0.10914999999999995539" rpy="-1.57079632679489678 1.4029230489356396488e-17 1.6358954997209602705e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_right_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000018705 0.14365000000000002767 0.10914999999999994151" rpy="-1.57079632679489678 1.0107513671806818273e-29 1.6358954997209602705e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_left_sheet.stl"/>
+            </geometry>
+            <material name="left_knee_to_ankle_left_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000018705 0.14365000000000002767 0.10914999999999994151" rpy="-1.57079632679489678 1.0107513671806818273e-29 1.6358954997209602705e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_left_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-1.3877787807814456755e-17 -0.053150000000000044431 0.0095499999999999751754" rpy="-1.570796326794896558 2.6344865467970005593e-16 1.570796326794896558" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-2.3592239273284576484e-16 -0.053150000000000155453 0.0066499999999989067856" rpy="-1.570796326794896558 2.6344865467970005593e-16 1.570796326794896558" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="5.0186022912074922139e-06 -0.057677917110201079587 0.018115364767747894892" rpy="0 0 0"/>
+            <mass value="0.072590000000000015623" />
+            <inertia ixx="5.028289301275742088e-05" ixy="1.0406643978365019103e-08"  ixz="2.2523076528011194756e-09" iyy="1.8696818962667509649e-05" iyz="8.4524815700179577589e-08" izz="4.2697758168489328816e-05" />
+        </inertial>
+    </link>
+    <link name="foot_assembly">
+        <visual>
+            <origin xyz="0.016060000000000011766 0.22230000000000008087 0.10905000000000000804" rpy="-1.570796326794896558 -4.1132337143489717524e-29 2.2926464428095881686e-18" />
+            <geometry>
+                <mesh filename="./foot_side.stl"/>
+            </geometry>
+            <material name="foot_side_material">
+                <color rgba="0.98039215686274505668 0.71372549019607844922 0.0039215686274509803377 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000011766 0.22230000000000008087 0.10905000000000000804" rpy="-1.570796326794896558 -4.1132337143489717524e-29 2.2926464428095881686e-18" />
+            <geometry>
+                <mesh filename="./foot_side.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000011766 0.22230000000000008087 0.10905000000000002192" rpy="-1.570796326794896558 -4.1132337143489717524e-29 2.2926464428095881686e-18" />
+            <geometry>
+                <mesh filename="./foot_bottom.stl"/>
+            </geometry>
+            <material name="foot_bottom_material">
+                <color rgba="0.3058823529411764941 0.29803921568627450567 0.27843137254901961786 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000011766 0.22230000000000008087 0.10905000000000002192" rpy="-1.570796326794896558 -4.1132337143489717524e-29 2.2926464428095881686e-18" />
+            <geometry>
+                <mesh filename="./foot_bottom.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000011766 0.22230000000000008087 0.10905000000000000804" rpy="-1.570796326794896558 -4.1132337143489717524e-29 2.2926464428095881686e-18" />
+            <geometry>
+                <mesh filename="./foot_top.stl"/>
+            </geometry>
+            <material name="foot_top_material">
+                <color rgba="0.98039215686274505668 0.71372549019607844922 0.0039215686274509803377 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000011766 0.22230000000000008087 0.10905000000000000804" rpy="-1.570796326794896558 -4.1132337143489717524e-29 2.2926464428095881686e-18" />
+            <geometry>
+                <mesh filename="./foot_top.stl"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="0.010749533567922235633 -0.023158811677953809044 0.018761929490664203818" rpy="0 0 0"/>
+            <mass value="0.056240000000000012204" />
+            <inertia ixx="1.666027996803502877e-05" ixy="1.3296396048084034071e-06"  ixz="5.8967392156022271557e-09" iyy="5.3043086177480889122e-05" iyz="-5.5175323192940205243e-08" izz="4.6754074945258894988e-05" />
+        </inertial>
+    </link>
+    <link name="left_foot">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="1e-9" />
+            <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+        </inertial>
+    </link>
+    <joint name="left_foot_frame" type="fixed">
+        <origin xyz="0 -0.036724999999999979883 0.019049999999999983613" rpy="-1.570796326794896558 -3.4146152368508307717e-19 -1.8519077370852487142e-17" />
+        <parent link="foot_assembly" />
+        <child link="left_foot" />
+        <axis xyz="0 0 0"/>
+    </joint>
+    <joint name="left_ankle" type="revolute">
+        <origin xyz="0 -0.07865000000000006708 9.9999999999988986588e-05" rpy="-5.5077724532749743024e-16 9.2653469445928301633e-16 3.2402024558001311503e-14" />
+        <parent link="knee_and_ankle_assembly_2" />
+        <child link="foot_assembly" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-1.570796326794896558" upper="1.570796326794896558"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="left_knee" type="revolute">
+        <origin xyz="-9.7144514654701197287e-17 -0.078649999999999734013 9.9999999999961231012e-05" rpy="7.358361518165846965e-16 5.0845139115396107043e-16 -7.1846367703695162136e-14" />
+        <parent link="knee_and_ankle_assembly" />
+        <child link="knee_and_ankle_assembly_2" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-1.570796326794896558" upper="1.570796326794896558"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="left_hip_pitch" type="revolute">
+        <origin xyz="0.074149999999998272848 1.249000902703301108e-15 0.035109999999998510456" rpy="3.1415926535897926719 1.5707963267948574781 0" />
+        <parent link="left_roll_to_pitch_assembly" />
+        <child link="knee_and_ankle_assembly" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-1.570796326794896558" upper="0.52359877559829881566"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="left_hip_roll" type="revolute">
+        <origin xyz="0.019050000000002648148 1.9602375278537920167e-15 -0.046015000000004538383" rpy="-1.5707963267950215691 1.6937530152664249305e-13 1.5707963267952902431" />
+        <parent link="hip_roll_assembly" />
+        <child link="left_roll_to_pitch_assembly" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-0.43633231299858238339" upper="0.43633231299858238339"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="left_hip_yaw" type="revolute">
+        <origin xyz="-0.056394334796673495358 0.028602766445326346934 0.024395090932709764808" rpy="-6.2403804745132919901e-14 0.021825623709755430368 1.3218914061185209833e-13" />
+        <parent link="trunk_assembly" />
+        <child link="hip_roll_assembly" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-0.52359877559829881566" upper="0.52359877559829881566"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <link name="hip_roll_assembly_2">
+        <visual>
+            <origin xyz="1.1796119636642288242e-16 -0.035109753291691928045 0.019049999999999976674" rpy="-4.9219703374550700056e-22 8.6392099480400725253e-19 -6.2450045135168210842e-16" />
+            <geometry>
+                <mesh filename="./roll_motor_bottom.stl"/>
+            </geometry>
+            <material name="roll_motor_bottom_material">
+                <color rgba="0.64705882352941179736 0.64705882352941179736 0.64705882352941179736 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="1.1796119636642288242e-16 -0.035109753291691928045 0.019049999999999976674" rpy="-4.9219703374550700056e-22 8.6392099480400725253e-19 -6.2450045135168210842e-16" />
+            <geometry>
+                <mesh filename="./roll_motor_bottom.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="6.9388939039072283776e-18 -0.034999999999999989453 0.019050000000000011369" rpy="-8.6043246337193936797e-30 8.6392099480400725253e-19 -7.6826984742194749325e-30" />
+            <geometry>
+                <mesh filename="./roll_motor_top.stl"/>
+            </geometry>
+            <material name="roll_motor_top_material">
+                <color rgba="0.90196078431372550543 0.90196078431372550543 0.90196078431372550543 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="6.9388939039072283776e-18 -0.034999999999999989453 0.019050000000000011369" rpy="-8.6043246337193936797e-30 8.6392099480400725253e-19 -7.6826984742194749325e-30" />
+            <geometry>
+                <mesh filename="./roll_motor_top.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.0096000000000085461416 2.9351521213527576037e-14 -0.02051499999999720214" rpy="-1.5707963267951248199 -1.5707963267947731012 0" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.012500000000010981493 2.9538871348933071204e-14 -0.020514999999997163976" rpy="-1.5707963267951248199 -1.5707963267947731012 0" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="0.00081968437258407144536 -1.3291009434503024507e-05 -0.033360058062012441782" rpy="0 0 0"/>
+            <mass value="0.066480000000000011307" />
+            <inertia ixx="2.4977622793272931308e-05" ixy="1.9209452794272764128e-09"  ixz="-3.9025516239425569553e-07" iyy="2.8788668793261174933e-05" iyz="-2.0013937274310607019e-08" izz="1.4081855731866522587e-05" />
+        </inertial>
+    </link>
+    <link name="right_roll_to_pitch_assembly">
+        <visual>
+            <origin xyz="0.035000000000000017208 -0.06500000000000000222 0.019050000000000025246" rpy="1.570796326794896558 1.570796326794896336 0" />
+            <geometry>
+                <mesh filename="./right_roll_to_pitch.stl"/>
+            </geometry>
+            <material name="right_roll_to_pitch_material">
+                <color rgba="0.90980392156862743835 0.57254901960784310155 0.16470588235294117418 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.035000000000000017208 -0.06500000000000000222 0.019050000000000025246" rpy="1.570796326794896558 1.570796326794896336 0" />
+            <geometry>
+                <mesh filename="./right_roll_to_pitch.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.06469999999999997975 -3.4694469519536141888e-18 0.0096099999999999866085" rpy="-1.570796326794896558 1.570796326794896336 0" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.067600000000002324896 2.7755575615628913511e-17 0.0096100000000000351807" rpy="-1.570796326794896558 1.570796326794896336 0" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="-0.050853962381456681296 -0.00042761260812278586345 0.020538562594690609048" rpy="0 0 0"/>
+            <mass value="0.075160000000000018461" />
+            <inertia ixx="2.5185797923757991679e-05" ixy="-1.3194412582201959808e-07"  ixz="3.6054448943632022637e-07" iyy="4.1351646104062061418e-05" iyz="-9.4752516351267388288e-08" izz="2.8114023122377634721e-05" />
+        </inertial>
+    </link>
+    <link name="knee_and_ankle_assembly_3">
+        <visual>
+            <origin xyz="0.016060000000002919163 -0.065000000000001292855 0.11069999999999947937" rpy="1.5707963267948954478 4.7749271992365418815e-29 4.9753252266699075178e-18" />
+            <geometry>
+                <mesh filename="./right_cache.stl"/>
+            </geometry>
+            <material name="right_cache_material">
+                <color rgba="0.91764705882352937127 0.91764705882352937127 0.91764705882352937127 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000002919163 -0.065000000000001292855 0.11069999999999947937" rpy="1.5707963267948954478 4.7749271992365418815e-29 4.9753252266699075178e-18" />
+            <geometry>
+                <mesh filename="./right_cache.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000006985355 -0.14365000000000335834 -0.072149999999999173128" rpy="1.5707963267948956698 2.2505723025293556719e-29 4.9753252266699075178e-18" />
+            <geometry>
+                <mesh filename="./leg_spacer.stl"/>
+            </geometry>
+            <material name="leg_spacer_material">
+                <color rgba="0.64705882352941179736 0.64705882352941179736 0.64705882352941179736 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000006985355 -0.14365000000000335834 -0.072149999999999173128" rpy="1.5707963267948956698 2.2505723025293556719e-29 4.9753252266699075178e-18" />
+            <geometry>
+                <mesh filename="./leg_spacer.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000004827 -0.14364999999999999991 -0.072049999999999905786" rpy="1.570796326794896336 -7.5834704907851944695e-30 1.6141257156867632184e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_right_sheet.stl"/>
+            </geometry>
+            <material name="left_knee_to_ankle_right_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000004827 -0.14364999999999999991 -0.072049999999999905786" rpy="1.570796326794896336 -7.5834704907851944695e-30 1.6141257156867632184e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_right_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000018261057 -0.14365000000000902047 -0.072049999999998157185" rpy="1.5707963267948943376 2.1817979133200883849e-30 4.8654251530128688577e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_left_sheet.stl"/>
+            </geometry>
+            <material name="left_knee_to_ankle_left_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000018261057 -0.14365000000000902047 -0.072049999999998157185" rpy="1.5707963267948943376 2.1817979133200883849e-30 4.8654251530128688577e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_left_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-3.0531133177191804862e-16 0.053149999999999954226 0.027549999999999394418" rpy="1.570796326794896558 -2.5428854281355796153e-14 -1.5707963267948674702" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-6.2450045135165055399e-16 0.053149999999999648914 0.030449999999999033395" rpy="1.570796326794896558 -2.5428854281355796153e-14 -1.5707963267948674702" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="0.00056047910023944934842 0.039612936197744905154 0.011487681029066719104" rpy="0 0 0"/>
+            <mass value="0.12407000000000002748" />
+            <inertia ixx="0.00020650684925489963084" ixy="1.5494383196544971542e-05"  ixz="1.3339309722488559105e-06" iyy="7.3841538054097383766e-05" iyz="-1.8679870685593453241e-05" izz="0.00021784327037384029497" />
+        </inertial>
+    </link>
+    <link name="knee_and_ankle_assembly_4">
+        <visual>
+            <origin xyz="0.016060000000001094234 0.1436500000000031918 0.10925000000000285871" rpy="-1.5707963267948956698 -6.3481428546467839053e-16 7.1741765269985126304e-16" />
+            <geometry>
+                <mesh filename="./leg_spacer.stl"/>
+            </geometry>
+            <material name="leg_spacer_material">
+                <color rgba="0.64705882352941179736 0.64705882352941179736 0.64705882352941179736 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000001094234 0.1436500000000031918 0.10925000000000285871" rpy="-1.5707963267948956698 -6.3481428546467839053e-16 7.1741765269985126304e-16" />
+            <geometry>
+                <mesh filename="./leg_spacer.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000032583 0.14365000000000005542 0.10914999999999998315" rpy="-1.57079632679489678 2.57202980252599187e-28 2.7380227204119710602e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_right_sheet.stl"/>
+            </geometry>
+            <material name="left_knee_to_ankle_right_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000032583 0.14365000000000005542 0.10914999999999998315" rpy="-1.57079632679489678 2.57202980252599187e-28 2.7380227204119710602e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_right_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000004827 0.14365000000000005542 0.10914999999999995539" rpy="-1.57079632679489678 4.7674905818753938583e-30 2.7380227204119710602e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_left_sheet.stl"/>
+            </geometry>
+            <material name="left_knee_to_ankle_left_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000004827 0.14365000000000005542 0.10914999999999995539" rpy="-1.57079632679489678 4.7674905818753938583e-30 2.7380227204119710602e-18" />
+            <geometry>
+                <mesh filename="./left_knee_to_ankle_left_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-4.1633363423443370266e-17 -0.053150000000000002798 0.0095499999999999474198" rpy="-1.570796326794896558 2.6194324487318792733e-16 1.570796326794896558" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="1.3877787807814456755e-16 -0.053149999999999891775 0.0066499999999999059863" rpy="-1.570796326794896558 2.6194324487318792733e-16 1.570796326794896558" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="5.0186022912095335633e-06 -0.057677917110201072648 0.018115364767747901831" rpy="0 0 0"/>
+            <mass value="0.072590000000000015623" />
+            <inertia ixx="5.0282893012757617392e-05" ixy="1.0406643978316339524e-08"  ixz="2.2523076527761750171e-09" iyy="1.8696818962667675668e-05" iyz="8.4524815700294985828e-08" izz="4.2697758168489328816e-05" />
+        </inertial>
+    </link>
+    <link name="foot_assembly_2">
+        <visual>
+            <origin xyz="0.016060000000000004827 0.22230000000000002536 0.10905000000000000804" rpy="-1.570796326794896558 2.2185239580341082734e-29 7.8611052559383506108e-19" />
+            <geometry>
+                <mesh filename="./foot_side.stl"/>
+            </geometry>
+            <material name="foot_side_material">
+                <color rgba="0.98039215686274505668 0.71372549019607844922 0.0039215686274509803377 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000004827 0.22230000000000002536 0.10905000000000000804" rpy="-1.570796326794896558 2.2185239580341082734e-29 7.8611052559383506108e-19" />
+            <geometry>
+                <mesh filename="./foot_side.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000004827 0.22230000000000002536 0.10905000000000000804" rpy="-1.570796326794896558 2.2185239580341082734e-29 7.8611052559383506108e-19" />
+            <geometry>
+                <mesh filename="./foot_bottom.stl"/>
+            </geometry>
+            <material name="foot_bottom_material">
+                <color rgba="0.3058823529411764941 0.29803921568627450567 0.27843137254901961786 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000004827 0.22230000000000002536 0.10905000000000000804" rpy="-1.570796326794896558 2.2185239580341082734e-29 7.8611052559383506108e-19" />
+            <geometry>
+                <mesh filename="./foot_bottom.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.016060000000000004827 0.22230000000000002536 0.10905000000000000804" rpy="-1.570796326794896558 2.2185239580341082734e-29 7.8611052559383506108e-19" />
+            <geometry>
+                <mesh filename="./foot_top.stl"/>
+            </geometry>
+            <material name="foot_top_material">
+                <color rgba="0.98039215686274505668 0.71372549019607844922 0.0039215686274509803377 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.016060000000000004827 0.22230000000000002536 0.10905000000000000804" rpy="-1.570796326794896558 2.2185239580341082734e-29 7.8611052559383506108e-19" />
+            <geometry>
+                <mesh filename="./foot_top.stl"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="0.010749533567922230429 -0.023158811677953826391 0.018761929490664200348" rpy="0 0 0"/>
+            <mass value="0.056240000000000012204" />
+            <inertia ixx="1.6660279968035021994e-05" ixy="1.3296396048084029836e-06"  ixz="5.8967392156019624579e-09" iyy="5.3043086177480882346e-05" iyz="-5.5175323192942534584e-08" izz="4.6754074945258888212e-05" />
+        </inertial>
+    </link>
+    <link name="right_foot">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="1e-9" />
+            <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+        </inertial>
+    </link>
+    <joint name="right_foot_frame" type="fixed">
+        <origin xyz="-1.3877787807814456755e-17 -0.036724999999999979883 0.019049999999999969735" rpy="-1.570796326794896558 -4.7247190275601867229e-17 6.0085748048618062173e-16" />
+        <parent link="foot_assembly_2" />
+        <child link="right_foot" />
+        <axis xyz="0 0 0"/>
+    </joint>
+    <joint name="right_ankle" type="revolute">
+        <origin xyz="-2.7755575615628913511e-17 -0.078650000000000080957 9.9999999999961231012e-05" rpy="-2.6194324489465746712e-16 2.8316471284964215798e-29 9.5878895885319479181e-14" />
+        <parent link="knee_and_ankle_assembly_4" />
+        <child link="foot_assembly_2" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-1.570796326794896558" upper="1.570796326794896558"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="right_knee" type="revolute">
+        <origin xyz="-1.360023205165816762e-15 0.07864999999999899849 0.036999999999998534062" rpy="3.141592653589793116 -5.3042305426499207572e-15 1.0017539295583627067e-13" />
+        <parent link="knee_and_ankle_assembly_3" />
+        <child link="knee_and_ankle_assembly_4" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-1.570796326794896558" upper="1.570796326794896558"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="right_hip_pitch" type="revolute">
+        <origin xyz="-0.074149999999999993694 -2.0816681711721685133e-17 0.035110000000000009257" rpy="-2.1823850769468260177e-17 1.5707963267948927832 0" />
+        <parent link="right_roll_to_pitch_assembly" />
+        <child link="knee_and_ankle_assembly_3" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-0.52359877559829881566" upper="1.570796326794896558"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="right_hip_roll" type="revolute">
+        <origin xyz="0.019050000000005999634 2.9060087669563472446e-14 -0.046014999999998154601" rpy="-1.570796326794797082 -7.3141829490872532251e-14 1.5707963267946682961" />
+        <parent link="hip_roll_assembly_2" />
+        <child link="right_roll_to_pitch_assembly" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-0.43633231299858238339" upper="0.43633231299858238339"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="right_hip_yaw" type="revolute">
+        <origin xyz="-0.056394334796664107035 -0.041397233554676490797 0.024395090932713945492" rpy="-5.7479562369434986172e-14 0.021825623709755558738 3.5607454337323585543e-13" />
+        <parent link="trunk_assembly" />
+        <child link="hip_roll_assembly_2" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-0.52359877559829881566" upper="0.52359877559829881566"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <link name="neck_assembly">
+        <visual>
+            <origin xyz="-0.019999999999999996947 -0.025110000000000021192 0.019049999999999980144" rpy="-1.57079632679489678 -7.1540519007414729602e-30 -1.4561700598441245788e-19" />
+            <geometry>
+                <mesh filename="./neck_left_sheet.stl"/>
+            </geometry>
+            <material name="neck_left_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.019999999999999996947 -0.025110000000000021192 0.019049999999999980144" rpy="-1.57079632679489678 -7.1540519007414729602e-30 -1.4561700598441245788e-19" />
+            <geometry>
+                <mesh filename="./neck_left_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.019999999999999990008 -0.02511000000000003507 0.019050000000000011369" rpy="-1.57079632679489678 -3.7002840070314188264e-18 -1.1808037124942247496e-16" />
+            <geometry>
+                <mesh filename="./neck_right_sheet.stl"/>
+            </geometry>
+            <material name="neck_right_sheet_material">
+                <color rgba="0.22352941176470589313 0.21960784313725489891 0.21960784313725489891 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.019999999999999990008 -0.02511000000000003507 0.019050000000000011369" rpy="-1.57079632679489678 -3.7002840070314188264e-18 -1.1808037124942247496e-16" />
+            <geometry>
+                <mesh filename="./neck_right_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="4.1633363423443370266e-17 0.040499999999999966582 0.0094499999999999983319" rpy="-1.570796326794896558 -1.196361041891435511e-16 -1.57079632679489678" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="2.0816681711721685133e-17 0.04049999999999998046 0.0065500000000000124095" rpy="-1.570796326794896558 -1.196361041891435511e-16 -1.57079632679489678" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="-5.6323271734559854162e-06 0.049218949368003632461 0.018178558574310388352" rpy="0 0 0"/>
+            <mass value="0.066180000000000016591" />
+            <inertia ixx="3.5272042025684876838e-05" ixy="8.7846144737548397549e-09"  ixz="-2.1547430376406007299e-09" iyy="1.7007167373020358968e-05" iyz="-9.7402024050992490502e-09" izz="2.831674681661848638e-05" />
+        </inertial>
+    </link>
+    <link name="head_pitch_assembly">
+        <visual>
+            <origin xyz="-0.020000000000000003886 -0.091110000000000038178 0.019049999999999980144" rpy="-1.570796326794896558 -5.4210967091377529528e-30 2.8753052419292948131e-19" />
+            <geometry>
+                <mesh filename="./head_pitch_to_yaw.stl"/>
+            </geometry>
+            <material name="head_pitch_to_yaw_material">
+                <color rgba="0.97254901960784312376 0.52941176470588235947 0.0039215686274509803377 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.020000000000000003886 -0.091110000000000038178 0.019049999999999980144" rpy="-1.570796326794896558 -5.4210967091377529528e-30 2.8753052419292948131e-19" />
+            <geometry>
+                <mesh filename="./head_pitch_to_yaw.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.025500000000000001832 0.047449999999999520339 0.019049999999999976674" rpy="-3.141592653589793116 5.4210967091377529528e-30 -3.141592653589793116" />
+            <geometry>
+                <mesh filename="./drive_palonier.stl"/>
+            </geometry>
+            <material name="drive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="-0.025500000000000397349 0.050350000000001893241 0.019049999999999924633" rpy="-3.141592653589793116 5.4210967091377529528e-30 -3.141592653589793116" />
+            <geometry>
+                <mesh filename="./passive_palonier.stl"/>
+            </geometry>
+            <material name="passive_palonier_material">
+                <color rgba="0.62352941176470588758 0.66666666666666662966 0.70196078431372543882 1.0"/>
+            </material>
+        </visual>
+        <inertial>
+            <origin xyz="-0.011311158966688484445 0.034719817036429449775 0.018839641337240732588" rpy="0 0 0"/>
+            <mass value="0.071850000000000024958" />
+            <inertia ixx="2.2112932935584533422e-05" ixy="1.2554084280671705118e-06"  ixz="-7.0616259743752338995e-09" iyy="2.5437894724542129809e-05" iyz="-1.8439764176713450242e-07" izz="2.9192036584982579314e-05" />
+        </inertial>
+    </link>
+    <link name="head_assembly">
+        <visual>
+            <origin xyz="-0.020000000000001336153 -3.9464959078472361398e-16 0.14810999999999463483" rpy="-3.1415926535897797933 4.3716373664754018489e-18 7.4988647406086779923e-30" />
+            <geometry>
+                <mesh filename="./head_bot_sheet.stl"/>
+            </geometry>
+            <material name="head_bot_sheet_material">
+                <color rgba="0.41176470588235292158 0.41176470588235292158 0.41176470588235292158 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.020000000000001336153 -3.9464959078472361398e-16 0.14810999999999463483" rpy="-3.1415926535897797933 4.3716373664754018489e-18 7.4988647406086779923e-30" />
+            <geometry>
+                <mesh filename="./head_bot_sheet.stl"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-0.019999999999999990008 -8.6736173798840354721e-19 0.1481099999999999639" rpy="3.141592653589793116 4.3228847022134545733e-18 2.0446806349836753508e-29" />
+            <geometry>
+                <mesh filename="./head.stl"/>
+            </geometry>
+            <material name="head_material">
+                <color rgba="0.91764705882352937127 0.91764705882352937127 0.91764705882352937127 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.019999999999999990008 -8.6736173798840354721e-19 0.1481099999999999639" rpy="3.141592653589793116 4.3228847022134545733e-18 2.0446806349836753508e-29" />
+            <geometry>
+                <mesh filename="./head.stl"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="0.016792571948818519473 -7.1640763485866378155e-05 0.021526088397512178202" rpy="0 0 0"/>
+            <mass value="0.22929000000000004933" />
+            <inertia ixx="0.00079211440607294795763" ixy="1.3828218927365268301e-06"  ixz="3.9567542390872730267e-05" iyy="0.00097905220885313531086" iyz="-5.195614152176663175e-08" izz="0.0015707783729806681569" />
+        </inertial>
+    </link>
+    <link name="head">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="1e-9" />
+            <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+        </inertial>
+    </link>
+    <joint name="head_frame" type="fixed">
+        <origin xyz="4.1633363423443370266e-17 0 -0.01249999999999990008" rpy="-3.1415926535897797933 4.3716373664754018489e-18 7.4988647406086779923e-30" />
+        <parent link="head_assembly" />
+        <child link="head" />
+        <axis xyz="0 0 0"/>
+    </joint>
+    <joint name="head_yaw" type="revolute">
+        <origin xyz="-2.0816681711721685133e-17 0.056900000000000033884 0.019049999999999952388" rpy="1.5707963267948958919 -2.9140480977164958126e-15 -8.9523033089878119206e-15" />
+        <parent link="head_pitch_assembly" />
+        <child link="head_assembly" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-2.9670597283903603625" upper="2.9670597283903603625"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="head_pitch" type="revolute">
+        <origin xyz="1.0408340855860842566e-16 0.066000000000000391687 -3.4694469519536141888e-18" rpy="-1.0915849447069766081e-16 -7.3845547632106068786e-17 -1.0417200973690603325e-16" />
+        <parent link="neck_assembly" />
+        <child link="head_pitch_assembly" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-1.570796326794896558" upper="1.570796326794896558"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+    <joint name="neck_pitch" type="revolute">
+        <origin xyz="-0.035437537550831413324 0.012752766445331959258 0.068008119366846808695" rpy="1.5707963267948341635 0.021825623709755184038 1.3218913913091132832e-13" />
+        <parent link="trunk_assembly" />
+        <child link="neck_assembly" />
+        <axis xyz="0 0 1"/>
+        <limit effort="1" velocity="20" lower="-0.34906585039886589561" upper="1.1344640137963142301"/>
+        <joint_properties friction="0.0"/>
+    </joint>
+</robot>

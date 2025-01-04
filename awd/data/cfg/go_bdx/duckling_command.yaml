@@ -2,7 +2,7 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 300
+  episodeLength: 500
   isFlagrun: False
   enableDebugVis: False
   
@@ -40,9 +40,9 @@ env:
     linearVelocityXYRewardScale: [1.0, 0.5]
     angularVelocityZRewardScale: 0.5
     torqueRewardScale: -0.001
-    feetAirTimeRewardScale: 0.05
+    feetAirTimeRewardScale: 0.01
     actionRateRewardScale: -0.005
-    standStillRewardScale: 0.1
+    standStillRewardScale: 0.0
 
     # normalization
     linearVelocityScale: [1.0, 1.0]
@@ -50,9 +50,9 @@ env:
     useAverageVelocities: True
 
   randomCommandVelocityRanges:
-    linear_x: [-0.3, 0.5] # min max [m/s]
+    linear_x: [-0.4, 0.5] # min max [m/s]
     linear_y: [-0.4, 0.4]   # min max [m/s]
-    yaw: [-0.6, 0.6]          # min max [rad/s]
+    yaw: [-0.5, 0.5]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
