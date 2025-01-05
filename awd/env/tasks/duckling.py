@@ -738,7 +738,7 @@ class Duckling(BaseTask):
         return mask_joint_ids, joint_ids
 
     def _action_to_pd_targets(self, action):
-        pd_tar = self._pd_action_offset + self._pd_action_scale * action 
+        pd_tar = self._pd_action_offset + self._pd_action_scale * action + self._initial_dof_pos
         return pd_tar
 
     def _init_camera(self):
