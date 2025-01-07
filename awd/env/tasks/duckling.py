@@ -593,6 +593,7 @@ class Duckling(BaseTask):
         return
 
     def _compute_duckling_obs(self, env_ids=None):
+        foot_contacts = self._contact_forces[:, self._contact_body_ids, 2] > 1.
         if (env_ids is None):
             key_body_pos = self._rigid_body_pos[:, self._key_body_ids, :]
             obs = compute_duckling_observations(self._rigid_body_pos[:, 0, :],
@@ -602,7 +603,7 @@ class Duckling(BaseTask):
                                                 self._dof_pos, self._dof_vel, key_body_pos,
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
-                                                self.projected_gravity, self.actions, self.last_actions)
+                                                self.projected_gravity, foot_contacts, self.actions, self.last_actions)
         else:
             key_body_pos = self._rigid_body_pos[:, self._key_body_ids, :]
             obs = compute_duckling_observations(self._rigid_body_pos[env_ids][:, 0, :],
@@ -612,7 +613,7 @@ class Duckling(BaseTask):
                                                 self._dof_pos[env_ids], self._dof_vel[env_ids], key_body_pos[env_ids],
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
-                                                self.projected_gravity[env_ids], self.actions[env_ids], self.last_actions[env_ids])        
+                                                self.projected_gravity[env_ids], foot_contacts[env_ids], self.actions[env_ids], self.last_actions[env_ids])        
         # obs = compute_duckling_observations_max(body_pos, body_rot, body_vel, body_ang_vel, self._local_root_obs,
         #                                         self._root_height_obs)
 
@@ -1042,10 +1043,11 @@ def compute_duckling_observations(
     dof_offsets,
     dof_axis,
     projected_gravity,
+    foot_contacts,
     actions,
     last_actions,
 ):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor, Tensor) -> Tensor
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor, Tensor, Tensor) -> Tensor
     # realistic observations
 
     obs = torch.cat(
@@ -1053,7 +1055,16 @@ def compute_duckling_observations(
             projected_gravity,
             dof_pos,
             dof_vel,
+            # foot_contacts,
+            # root_pos,
+            # root_rot,
+            # root_vel,
+            # root_ang_vel,
+            # key_body_pos,
+            # local_root_obs,
+            # root_height_obs,
             actions,
+            # last_actions,
         ),
         dim=-1,
     )
