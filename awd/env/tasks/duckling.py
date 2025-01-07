@@ -181,6 +181,12 @@ class Duckling(BaseTask):
         ).repeat((self.num_envs, 1))
 
         self.projected_gravity = quat_rotate_inverse(self._duckling_root_states[:, 3:7], self.gravity_vec)
+
+        self.common_step_counter = 0
+        self._push_robots_flag = self.cfg["env"].get("pushRobots", False)
+        self._push_step = self.cfg["env"].get("pushStep", 150) * torch.ones(self.num_envs, dtype=torch.bool, device=self.device, requires_grad=False)
+        self._push_steap_range = self.cfg["env"].get("pushStepRandomRange", 80)
+        self.max_push_vel = self.cfg["env"].get("maxPushVelXy", 0.5)
         
         if self.viewer != None:
             self._init_camera()
@@ -251,6 +257,8 @@ class Duckling(BaseTask):
         self.last_actions[env_ids] = 0.
         self.actions[env_ids] = 0.
         self.avg_velocities[env_ids] = 0.
+        if self._push_robots_flag:
+            self._push_step[env_ids] += torch.randint(-self._push_steap_range, self._push_steap_range, (len(env_ids),), device=self.device)
         return
 
     def _create_ground_plane(self):
@@ -631,7 +639,6 @@ class Duckling(BaseTask):
         self._duckling_root_states[env_ids] = self._initial_duckling_root_states[env_ids]
         self._dof_pos[env_ids] = self._initial_dof_pos[env_ids]
         self._dof_vel[env_ids] = self._initial_dof_vel[env_ids]
-
         return
 
     def pre_physics_step(self, actions):
@@ -651,6 +658,7 @@ class Duckling(BaseTask):
 
     def post_physics_step(self):
         self.progress_buf += 1
+        self.common_step_counter += 1
         self.randomize_buf += 1
 
         # Computing average velocities over the last gait
@@ -683,7 +691,18 @@ class Duckling(BaseTask):
         if self.viewer and self.debug_viz:
             self._update_debug_viz()
 
+        # push robots
+        if self._push_robots_flag:
+            push_mask = self.progress_buf == self._push_step
+            push_env_ids = push_mask.nonzero(as_tuple=False).flatten()
+            if len(push_env_ids) > 0:
+                self._push_robots(push_env_ids)            
         return
+    
+    def _push_robots(self, env_ids):
+        """Random pushes the robots. Emulates an impulse by setting a randomized base velocity."""
+        self._duckling_root_states[env_ids, 7:9] = torch_rand_float(-self.max_push_vel, self.max_push_vel, (len(env_ids), 2), device=self.device)  # lin vel x/y
+        self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self._root_states))
 
     def render(self, sync_frame_time=False):
         # if self.viewer:

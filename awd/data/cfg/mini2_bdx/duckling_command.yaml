@@ -12,6 +12,11 @@ env:
   stateInit: "Hybrid"
   hybridInitProb: 0.5
   numAMPObsSteps: 20
+
+  pushRobots: False
+  pushStep: 150 #s
+  pushStepRandomRange: 80 # push works at pushStep +- pushStepRandomRange
+  maxPushVelXy: 0.3
   
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]

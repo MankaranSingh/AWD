@@ -91,7 +91,6 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         return
 
     def _update_task(self):
-        # TODO: change commands after certain steps.
         reset_task_mask = self.progress_buf >= self._command_change_steps
         rest_env_ids = reset_task_mask.nonzero(as_tuple=False).flatten()
         if len(rest_env_ids) > 0:
