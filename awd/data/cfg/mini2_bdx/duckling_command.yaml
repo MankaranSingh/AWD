@@ -17,7 +17,15 @@ env:
   pushStep: 150 #s
   pushStepRandomRange: 80 # push works at pushStep +- pushStepRandomRange
   maxPushVelXy: 0.3
-  
+
+  # COM is randomized only once for each actor, but not at each reset
+  randomizeCom: False
+  comRandomizeRange: [-0.05, 0.05]
+  randomizeTorques: False
+  torqueMultiplierRange: [0.85, 1.15]
+
+  customControl: False
+
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
   contactBodies: ["foot_assembly", "foot_assembly_2"]

@@ -17,64 +17,30 @@ joints:
   - right_ankle
 dof_body_ids: [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14, 15]
 dof_offsets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-# 16*4
+
 dof_obs_size: 96
 num_actions: 16
-# 1 + 15 * (3 + 6 + 3 + 3) - 3
 num_obs: 51
 motor_efforts: [100, 100, 100, 100, 100, 50, 50, 50, 50, 10, 10, 100, 100, 100, 100, 100]
-#13 + dof_obs_size + 28 + 3 * num_key_bodies # [root_h, root_rot, root_vel, root_ang_vel, dof_pos, dof_vel, key_body_pos]
 num_amp_obs_per_step: 53
-damping:
-  left_ankle: 1.5
-  left_antenna: 1.5
-  left_hip_pitch: 1.5
-  left_hip_roll: 1.5
-  left_hip_yaw: 1.5
-  left_knee: 1.5
-  neck_pitch: 1.5
-  head_pitch: 1.5
-  head_roll: 1.5
-  head_yaw: 1.5
-  right_ankle: 1.5
-  right_antenna: 1.5
-  right_hip_pitch: 1.5
-  right_hip_roll: 1.5
-  right_hip_yaw: 1.5
-  right_knee: 1.5
-stiffness:
-  left_ankle: 30
-  left_antenna: 5
-  left_hip_pitch: 40
-  left_hip_roll: 40
-  left_hip_yaw: 40
-  left_knee: 35
-  neck_pitch: 10
-  head_pitch: 10
-  head_roll: 10
-  head_yaw: 10
-  right_ankle: 30
-  right_antenna: 5
-  right_hip_pitch: 40
-  right_hip_roll: 40
-  right_hip_yaw: 40
-  right_knee: 35
 
-
-init_pos:
-  left_ankle: 0.0
-  left_antenna: 0.0
-  left_hip_pitch: 0.0
-  left_hip_roll: 0.0
-  left_hip_yaw: 0.0
-  left_knee: 0.0
-  neck_pitch: 0.0
-  head_pitch: 0.0
-  head_roll: 0.0
-  head_yaw: 0.0
-  right_ankle: 0.0
-  right_antenna: 0.0
-  right_hip_pitch: 0.0
-  right_hip_roll: 0.0
-  right_hip_yaw: 0.0
-  right_knee: 0.0
+# motor_efforts are only used in torque control mode (pd_control=False)
+# p_gains and d_gains are only used in custom control mode
+dof_props:
+  left_hip_yaw:    {"damping": 1.5, "stiffness": 40, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  left_hip_roll:   {"damping": 1.5, "stiffness": 40, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  left_hip_pitch:  {"damping": 1.5, "stiffness": 40, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  left_knee:       {"damping": 1.5, "stiffness": 35, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  left_ankle:      {"damping": 1.5, "stiffness": 30, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  neck_pitch:      {"damping": 1.5, "stiffness": 10, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2} 
+  head_pitch:      {"damping": 1.5, "stiffness": 10, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  head_yaw:        {"damping": 1.5, "stiffness": 10, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  head_roll:       {"damping": 1.5, "stiffness": 10, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  left_antenna:    {"damping": 1.5, "stiffness": 5, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  right_antenna:   {"damping": 1.5, "stiffness": 5, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2} 
+  right_hip_yaw:   {"damping": 1.5, "stiffness": 40, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  right_hip_roll:  {"damping": 1.5, "stiffness": 40, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  right_hip_pitch: {"damping": 1.5, "stiffness": 40, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  right_knee:      {"damping": 1.5, "stiffness": 35, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}
+  right_ankle:     {"damping": 1.5, "stiffness": 30, "friction": 0.0, "armature": 0.0, "max_velocity": 30, "max_effort": 23.7, "init_pos": 0.0, "motor_efforts": 100, "p_gain": 10, "d_gain": 0.2}  
+  

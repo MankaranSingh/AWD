@@ -54,6 +54,7 @@ class Duckling(BaseTask):
         self.curriculum = self.cfg["env"]["terrain"]["curriculum"]
 
         self._pd_control = self.cfg["env"]["pdControl"]
+        self.custom_control = self.cfg["env"].get("customControl", False)
         self.power_scale = self.cfg["env"]["powerScale"]
 
         self.debug_viz = self.cfg["env"]["enableDebugVis"]
@@ -80,10 +81,12 @@ class Duckling(BaseTask):
         self.cfg["device_type"] = device_type
         self.cfg["device_id"] = device_id
         self.cfg["headless"] = headless
-         
+        
+        self.randomize_com = self.cfg["env"].get("randomizeCom", False)
+        self.com_randomize_range = self.cfg["env"].get("comRandomizeRange", [-0.1, 0.1])
         super().__init__(cfg=self.cfg)
         
-        self.dt = self.control_freq_inv * sim_params.dt
+        self.dt = self.control_freq_inv * sim_params.dt        
         
         # get gym GPU state tensors
         #self.gym.refresh_actor_root_state_tensor(self.sim)
@@ -127,10 +130,8 @@ class Duckling(BaseTask):
             self._dof_pos, device=self.device, dtype=torch.float
         )
 
-        props = self._get_asset_properties()
-        for i, name in enumerate(props["init_pos"]):
-            angle = props["init_pos"][name]
-            self._default_dof_pos[:, i] = angle
+        for i, joint_name in enumerate(self._joints):
+            self._default_dof_pos[:, i] = self._dof_props_config[joint_name].get("init_pos", 0.0)
         
         self._initial_dof_pos = torch.zeros_like(self._dof_pos, device=self.device, dtype=torch.float)
         self._initial_dof_pos[:, :] = self._default_dof_pos
@@ -187,7 +188,12 @@ class Duckling(BaseTask):
         self._push_step = self.cfg["env"].get("pushStep", 150) * torch.ones(self.num_envs, dtype=torch.bool, device=self.device, requires_grad=False)
         self._push_steap_range = self.cfg["env"].get("pushStepRandomRange", 80)
         self.max_push_vel = self.cfg["env"].get("maxPushVelXy", 0.5)
-        
+
+        self.randomize_torques = self.cfg["env"].get("randomizeTorques", False)
+        self.torque_multiplier_range = self.cfg["env"].get("torqueMultiplierRange", [0.85, 1.15])
+        if self.randomize_torques:
+            self.randomize_torques_factors = torch.ones(self.num_envs, self.num_actions, device=self.device)
+   
         if self.viewer != None:
             self._init_camera()
 
@@ -259,6 +265,9 @@ class Duckling(BaseTask):
         self.avg_velocities[env_ids] = 0.
         if self._push_robots_flag:
             self._push_step[env_ids] += torch.randint(-self._push_steap_range, self._push_steap_range, (len(env_ids),), device=self.device)
+        if self.randomize_torques:
+            self.randomize_torques_factors[env_ids, :] = torch_rand_float(self.torque_multiplier_range[0], self.torque_multiplier_range[1], 
+                                                                          (len(env_ids), self.num_actions), device=self.device)
         return
 
     def _create_ground_plane(self):
@@ -311,10 +320,7 @@ class Duckling(BaseTask):
         self._dof_obs_size = props['dof_obs_size']
         self._num_actions = props['num_actions']
         self._num_obs = props['num_obs']
-        self._stiffness = props['stiffness']
-        self._damping = props['damping']
-        self._friction = props.get('friction', {})
-        self._armature = props.get('armature', {})
+        self._dof_props_config = props['dof_props']
         return
 
     def _build_termination_heights(self):
@@ -402,7 +408,9 @@ class Duckling(BaseTask):
         if len(actuator_props) != 0:
             motor_efforts = [prop.motor_effort for prop in actuator_props]
         else:
-            motor_efforts = props['motor_efforts']
+            motor_efforts = []
+            for dof in props["dof_props"]:
+                motor_efforts.append(props["dof_props"][dof]['motor_efforts'])
     
         # create force sensors at the feet
         right_foot_idx = self.gym.find_asset_rigid_body_index(duckling_asset, "right_foot")
@@ -463,6 +471,22 @@ class Duckling(BaseTask):
         if (self._pd_control):
             self._build_pd_action_offset_scale()
         
+        if self.randomize_com:
+            self.randomize_com_values = torch_rand_float(self.com_randomize_range[0], self.com_randomize_range[1], (self.num_envs, 3), device=self.device)
+            for i in range(self.num_envs):
+                body_props = self.gym.get_actor_rigid_body_properties(self.envs[i], self.duckling_handles[i])
+                body_props[0].com += gymapi.Vec3(
+                    self.randomize_com_values[i, 0],
+                    self.randomize_com_values[i, 1],
+                    self.randomize_com_values[i, 2],
+                )
+                self.gym.set_actor_rigid_body_properties(
+                    self.envs[i],
+                    self.duckling_handles[i],
+                    body_props,
+                    recomputeInertia=True,
+                )
+        
         # object_rb_props = self.gym.get_actor_rigid_body_properties(self.envs[0], self.duckling_handles[0])
         # masses = [prop.mass for prop in object_rb_props]
         # print("masses:", masses)
@@ -493,25 +517,15 @@ class Duckling(BaseTask):
             dof_prop = self.gym.get_asset_dof_properties(duckling_asset)
             dof_prop["driveMode"] = gymapi.DOF_MODE_POS
             for i, dof_name in enumerate(dof_names):
-                if dof_name in self._stiffness:
-                    dof_prop['stiffness'][i] = self._stiffness[dof_name]
-                else:
-                    print(f"WARNING: No stiffness values for {dof_name}")
-                if dof_name in self._damping:
-                    dof_prop['damping'][i] = self._damping[dof_name]
-                else:
-                    print(f"WARNING: No damping values for {dof_name}")
-                if dof_name in self._friction:
-                    dof_prop['friction'][i] = self._friction[dof_name]
-                if dof_name in self._armature:
-                    dof_prop['armature'][i] = self._armature[dof_name]
-            # for key in dof_prop.dtype.names:
-            #     print(f"{key}: {dof_prop[key]}")
+                if dof_name not in self._dof_props_config:
+                    continue
+                for prop_type in ["stiffness", "damping", "friction", "armature"]:
+                    if self._dof_props_config[dof_name].get(prop_type, None) is not None:
+                        dof_prop[prop_type][i] = self._dof_props_config[dof_name][prop_type]
+                    else:
+                        print(f"WARNING: No stiffness values for {dof_name}")
             self.gym.set_actor_dof_properties(env_ptr, duckling_handle, dof_prop)
-
         self.duckling_handles.append(duckling_handle)
-
-        return
 
     def _build_pd_action_offset_scale(self):
         num_joints = len(self._dof_offsets) - 1
@@ -643,7 +657,9 @@ class Duckling(BaseTask):
 
     def pre_physics_step(self, actions):
         self.actions = actions.to(self.device).clone()
-        if (self._pd_control):
+        if self.custom_control:
+            pass
+        elif (self._pd_control):
             pd_tar = self._action_to_pd_targets(self.actions)
             if self._mask_joint_values is not None:
                 pd_tar[:, self._mask_joint_ids] = self._mask_joint_values
@@ -1074,7 +1090,7 @@ def compute_duckling_observations(
             projected_gravity,
             dof_pos,
             dof_vel,
-            # foot_contacts,
+            foot_contacts,
             # root_pos,
             # root_rot,
             # root_vel,
