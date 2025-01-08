@@ -1,7 +1,7 @@
 {
-    "dx": 0.04,
-    "dy": 0.04,
-    "dtheta": -0.2,
+    "dx": -0.0,
+    "dy": 0.05,
+    "dtheta": 0.13,
     "duration": 8,
     "hardware": true,
     "double_support_ratio": 0.5,

@@ -11,27 +11,24 @@ from scipy.spatial.transform import Rotation as R
 
 from gait.placo_walk_engine import PlacoWalkEngine
 
-
 def open_browser():
     try:
-        webbrowser.open_new("http://127.0.0.1:7000/static/")
+        webbrowser.open_new('http://127.0.0.1:7000/static/')
     except:
         print("Failed to open the default browser. Trying Google Chrome.")
         try:
-            webbrowser.get("google-chrome").open_new("http://127.0.0.1:7000/static/")
+            webbrowser.get('google-chrome').open_new('http://127.0.0.1:7000/static/')
         except:
-            print(
-                "Failed to open Google Chrome. Make sure it's installed and accessible."
-            )
-
+            print("Failed to open Google Chrome. Make sure it's installed and accessible.")
 
 class RoundingFloat(float):
-    __repr__ = staticmethod(lambda x: format(x, ".5f"))
-
+    __repr__ = staticmethod(lambda x: format(x, '.5f'))
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--name", type=str, required=True)
-parser.add_argument("-o", "--output_dir", type=str, default="recordings")
+script_path = os.path.dirname(os.path.abspath(__file__))
+default_output_dir = os.path.join(script_path, "../recordings")
+parser.add_argument("-o", "--output_dir", type=str, default=default_output_dir)
 parser.add_argument("--dx", type=float, default=0)
 parser.add_argument("--dy", type=float, default=0)
 parser.add_argument("--dtheta", type=float, default=0)
@@ -57,6 +54,7 @@ parser.add_argument("--walk_max_dx_backward", type=float, default=None)
 parser.add_argument("-l", "--length", type=int, default=10)
 parser.add_argument("-m", "--meshcat_viz", action="store_true", default=False)
 parser.add_argument("--mini", action="store_true", default=False)
+parser.add_argument("--mini2", action="store_true", default=False)
 parser.add_argument("--debug", action="store_true", default=False)
 parser.add_argument("--preset", type=str, default="")
 parser.add_argument(
@@ -75,7 +73,7 @@ parser.add_argument(
 args = parser.parse_args()
 args.hardware = True
 
-FPS = 60
+FPS = 30
 MESHCAT_FPS = 20
 DISPLAY_MESHCAT = args.meshcat_viz
 
@@ -106,14 +104,19 @@ episode = {
 if args.debug:
     episode["Debug_info"] = []
 
+script_path = os.path.dirname(os.path.abspath(__file__))
 if args.mini:
-    robot = "mini_bdx"
+    robot = 'mini_bdx'
     robot_urdf = "urdf/bdx.urdf"
-    asset_path = "../awd/data/assets/mini_bdx"
+    asset_path = os.path.join(script_path, "../awd/data/assets/mini_bdx")
+elif args.mini2:
+    robot = 'mini2_bdx'
+    robot_urdf = "mini2_bdx.urdf"
+    asset_path = os.path.join(script_path, "../awd/data/assets/mini2_bdx")
 else:
-    robot = "go_bdx"
+    robot = 'go_bdx'
     robot_urdf = "go_bdx.urdf"
-    asset_path = "../awd/data/assets/go_bdx"
+    asset_path = os.path.join(script_path, "../awd/data/assets/go_bdx")
 
 preset_filename = args.preset
 filename = os.path.join(asset_path, "placo_defaults.json")
@@ -122,10 +125,10 @@ if preset_filename:
         filename = preset_filename
     else:
         print(f"No such file: {preset_filename}")
-with open(filename, "r") as f:
+with open(filename, 'r') as f:
     gait_parameters = json.load(f)
     print(f"gait_parameters {gait_parameters}")
-
+    
 args.dx = gait_parameters["dx"]
 args.dy = gait_parameters["dy"]
 args.dtheta = gait_parameters["dtheta"]
@@ -147,6 +150,7 @@ start = time.time()
 last_record = 0
 last_meshcat_display = 0
 prev_root_position = [0, 0, 0]
+prev_root_orientation_quat = None
 prev_root_orientation_euler = [0, 0, 0]
 prev_left_toe_pos = [0, 0, 0]
 prev_right_toe_pos = [0, 0, 0]
@@ -157,9 +161,28 @@ avg_x_lin_vel = []
 avg_y_lin_vel = []
 avg_yaw_vel = []
 added_frame_info = False
-# center_y_pos = None
-center_y_pos = -(pwe.parameters.feet_spacing / 2)
+#center_y_pos = None
+center_y_pos = -(pwe.parameters.feet_spacing/2)
 print(f"center_y_pos: {center_y_pos}")
+
+def compute_angular_velocity(quat, prev_quat, dt):
+    # Convert quaternions to scipy Rotation objects
+    if prev_quat is None:
+        prev_quat = quat
+    r1 = R.from_quat(quat)  # Current quaternion
+    r0 = R.from_quat(prev_quat)  # Previous quaternion
+    
+    # Compute relative rotation: r_rel = r0^(-1) * r1
+    r_rel = r0.inv() * r1
+    
+    # Convert relative rotation to axis-angle
+    axis, angle = r_rel.as_rotvec(), np.linalg.norm(r_rel.as_rotvec())
+    
+    # Angular velocity (in radians per second)
+    angular_velocity = axis * (angle / dt)
+    
+    return list(angular_velocity)
+
 while True:
     pwe.tick(DT)
     if pwe.t <= 0 + args.skip_warmup * 1:
@@ -176,16 +199,10 @@ while True:
         else:
             T_world_fbase = pwe.robot.get_T_world_fbase()
         root_position = list(T_world_fbase[:3, 3])
-        if not args.mini:
-            root_position[2] = round(root_position[2], 1)
-        # if center_y_pos is None:
+        #if center_y_pos is None:
         #    center_y_pos = root_position[1]
-
-        # Why ?
-        # Commented this for mini bdx as it shifted the trunk frame
-        # root_position[1] = root_position[1] - center_y_pos
-
-        if round(root_position[2], 5) < 0:
+        root_position[1] = root_position[1] - center_y_pos
+        if round(root_position[2],5) < 0:
             print(f"BAD root_position: {root_position[2]:.5f}")
         root_orientation_quat = list(R.from_matrix(T_world_fbase[:3, :3]).as_quat())
         joints_positions = list(pwe.get_angles().values())
@@ -199,12 +216,8 @@ while True:
             T_world_leftFoot = pwe.robot.get_T_world_left()
             T_world_rightFoot = pwe.robot.get_T_world_right()
 
-        T_body_leftFoot = (
-            T_world_leftFoot  # np.linalg.inv(T_world_fbase) @ T_world_leftFoot
-        )
-        T_body_rightFoot = (
-            T_world_rightFoot  # np.linalg.inv(T_world_fbase) @ T_world_rightFoot
-        )
+        T_body_leftFoot = T_world_leftFoot #np.linalg.inv(T_world_fbase) @ T_world_leftFoot
+        T_body_rightFoot = T_world_rightFoot  #np.linalg.inv(T_world_fbase) @ T_world_rightFoot
 
         left_toe_pos = list(T_body_leftFoot[:3, 3])
         right_toe_pos = list(T_body_rightFoot[:3, 3])
@@ -229,13 +242,15 @@ while True:
         # print("world linear vel", world_linear_vel)
         # print("body linear vel", body_linear_vel)
 
-        world_angular_vel = list(
-            (
-                R.from_quat(root_orientation_quat).as_euler("xyz")
-                - prev_root_orientation_euler
-            )
-            / (1 / FPS)
-        )
+        world_angular_vel = compute_angular_velocity(root_orientation_quat, prev_root_orientation_quat, (1 / FPS))
+
+        # world_angular_vel = list(
+        #     (
+        #         R.from_quat(root_orientation_quat).as_euler("xyz")
+        #         - prev_root_orientation_euler
+        #     )
+        #     / (1 / FPS)
+        # )
         avg_yaw_vel.append(world_angular_vel[2])
         body_angular_vel = list(body_rot_mat.T @ world_angular_vel)
         # print("world angular vel", world_angular_vel)
@@ -253,6 +268,8 @@ while True:
             (np.array(right_toe_pos) - np.array(prev_right_toe_pos)) / (1 / FPS)
         )
 
+        foot_contacts = pwe.get_current_support_phase()
+
         if prev_initialized:
             if args.hardware:
                 episode["Frames"].append(
@@ -266,6 +283,7 @@ while True:
                     + joints_vel
                     + left_toe_vel
                     + right_toe_vel
+                    + foot_contacts
                 )
             else:
                 episode["Frames"].append(
@@ -301,6 +319,8 @@ while True:
                 offset = offset + len(left_toe_vel)
                 offset_right_toe_vel = offset
                 offset = offset + len(right_toe_vel)
+                offset_foot_contacts = offset
+                offset = offset + len(foot_contacts)
 
                 episode["Joints"] = list(pwe.get_angles().keys())
                 episode["Frame_offset"].append(
@@ -315,6 +335,7 @@ while True:
                         "joints_vel": offset_joints_vel,
                         "left_toe_vel": offset_left_toe_vel,
                         "right_toe_vel": offset_right_toe_vel,
+                        "foot_contacts": offset_foot_contacts,
                     }
                 )
                 episode["Frame_size"].append(
@@ -329,10 +350,12 @@ while True:
                         "joints_vel": len(joints_vel),
                         "left_toe_vel": len(left_toe_vel),
                         "right_toe_vel": len(right_toe_vel),
+                        "foot_contacts": len(foot_contacts),
                     }
                 )
 
         prev_root_position = root_position.copy()
+        prev_root_orientation_quat = root_orientation_quat.copy()
         prev_root_orientation_euler = (
             R.from_quat(root_orientation_quat).as_euler("xyz").copy()
         )
@@ -351,16 +374,18 @@ while True:
         robot_frame_viz(pwe.robot, "left_foot")
         robot_frame_viz(pwe.robot, "right_foot")
 
-    # if pwe.t - start > args.length:
+    #if pwe.t - start > args.length:
     #    break
     if len(episode["Frames"]) == args.length * FPS:
         break
 
     i += 1
 
-mean_avg_x_lin_vel = np.around(np.mean(avg_x_lin_vel), 4)
-mean_avg_y_lin_vel = np.around(np.mean(avg_y_lin_vel), 4)
-mean_yaw_vel = np.around(np.mean(avg_yaw_vel), 4)
+# skip first 2 seconds to get better average speed
+mean_avg_x_lin_vel = np.around(np.mean(avg_x_lin_vel[240:]), 4)
+mean_avg_y_lin_vel = np.around(np.mean(avg_y_lin_vel[240:]), 4)
+mean_yaw_vel = np.around(np.mean(avg_yaw_vel[240:]), 4)
+
 print("recorded", len(episode["Frames"]), "frames")
 print(f"avg lin_vel_x {mean_avg_x_lin_vel}")
 print(f"avg lin_vel_y {mean_avg_y_lin_vel}")
@@ -368,7 +393,7 @@ print(f"avg yaw {mean_yaw_vel}")
 episode["Vel_x"] = mean_avg_x_lin_vel
 episode["Vel_y"] = mean_avg_y_lin_vel
 episode["Yaw"] = mean_yaw_vel
-episode["Placo"] = {
+episode["Placo"] =  {
     "dx": args.dx,
     "dy": args.dy,
     "dtheta": args.dtheta,
@@ -393,6 +418,10 @@ episode["Placo"] = {
     "walk_max_dy": pwe.parameters.walk_max_dy,
     "walk_max_dx_forward": pwe.parameters.walk_max_dx_forward,
     "walk_max_dx_backward": pwe.parameters.walk_max_dx_backward,
+    "avg_x_lin_vel": mean_avg_x_lin_vel,
+    "avg_y_lin_vel": mean_avg_y_lin_vel,
+    "avg_yaw_vel": mean_yaw_vel,
+    "preset_name": args.preset.split("/")[-1].split(".")[0],
 }
 
 file_name = args.name + str(".json")
