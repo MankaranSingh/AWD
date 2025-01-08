@@ -133,6 +133,18 @@ class Duckling(BaseTask):
         for i, joint_name in enumerate(self._joints):
             self._default_dof_pos[:, i] = self._dof_props_config[joint_name].get("init_pos", 0.0)
         
+        if self.custom_control:
+            self.p_gains = []
+            self.d_gains = []
+            self.max_efforts = []
+            for i, joint_name in enumerate(self._joints):
+                self.p_gains.append(self._dof_props_config[joint_name]["p_gain"])
+                self.d_gains.append(self._dof_props_config[joint_name]["d_gain"])
+                self.max_efforts.append(self._dof_props_config[joint_name]["max_effort"])
+            self.p_gains = to_torch(self.p_gains, device=self.device)
+            self.d_gains = to_torch(self.d_gains, device=self.device)
+            self.max_efforts = to_torch(self.max_efforts, device=self.device)
+    
         self._initial_dof_pos = torch.zeros_like(self._dof_pos, device=self.device, dtype=torch.float)
         self._initial_dof_pos[:, :] = self._default_dof_pos
         self._initial_dof_vel = torch.zeros_like(self._dof_vel, device=self.device, dtype=torch.float)
@@ -512,18 +524,17 @@ class Duckling(BaseTask):
         # for j in range(self.num_bodies):
         #     self.gym.set_rigid_body_color(env_ptr, duckling_handle, j, gymapi.MESH_VISUAL, gymapi.Vec3(0.54, 0.85, 0.2))
 
-        if (self._pd_control):
-            dof_names = self.gym.get_asset_dof_names(duckling_asset)
-            dof_prop = self.gym.get_asset_dof_properties(duckling_asset)
-            dof_prop["driveMode"] = gymapi.DOF_MODE_POS
-            for i, dof_name in enumerate(dof_names):
-                if dof_name not in self._dof_props_config:
-                    continue
-                for prop_type in ["stiffness", "damping", "friction", "armature"]:
-                    if self._dof_props_config[dof_name].get(prop_type, None) is not None:
-                        dof_prop[prop_type][i] = self._dof_props_config[dof_name][prop_type]
-                    else:
-                        print(f"WARNING: No stiffness values for {dof_name}")
+        dof_names = self.gym.get_asset_dof_names(duckling_asset)
+        dof_prop = self.gym.get_asset_dof_properties(duckling_asset)
+        dof_prop["driveMode"] = gymapi.DOF_MODE_POS
+        for i, dof_name in enumerate(dof_names):
+            if dof_name not in self._dof_props_config:
+                continue
+            for prop_type in ["stiffness", "damping", "friction", "armature", "velocity"]:
+                if self._dof_props_config[dof_name].get(prop_type, None) is not None:
+                    dof_prop[prop_type][i] = self._dof_props_config[dof_name][prop_type]
+                else:
+                    print(f"WARNING: No stiffness values for {dof_name}")
             self.gym.set_actor_dof_properties(env_ptr, duckling_handle, dof_prop)
         self.duckling_handles.append(duckling_handle)
 
@@ -657,15 +668,24 @@ class Duckling(BaseTask):
 
     def pre_physics_step(self, actions):
         self.actions = actions.to(self.device).clone()
-        if self.custom_control:
-            pass
-        elif (self._pd_control):
+        if self.custom_control: # custom position control
+            for _ in range(self.control_freq_inv):
+                self.torques = self.p_gains*(self.actions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
+                if self.randomize_torques:
+                    self.torques *= self.randomize_torques_factors
+                self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
+                self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
+                self.gym.simulate(self.sim)
+                if self.device == "cpu":
+                    self.gym.fetch_results(self.sim, True)
+                self.gym.refresh_dof_state_tensor(self.sim)
+        elif (self._pd_control): # isaac based position contol
             pd_tar = self._action_to_pd_targets(self.actions)
             if self._mask_joint_values is not None:
                 pd_tar[:, self._mask_joint_ids] = self._mask_joint_values
             pd_tar_tensor = gymtorch.unwrap_tensor(pd_tar)
             self.gym.set_dof_position_target_tensor(self.sim, pd_tar_tensor)
-        else:
+        else: # isaac based torque control
             forces = self.actions * self.motor_efforts.unsqueeze(0) * self.power_scale
             force_tensor = gymtorch.unwrap_tensor(forces)
             self.gym.set_dof_actuation_force_tensor(self.sim, force_tensor)
