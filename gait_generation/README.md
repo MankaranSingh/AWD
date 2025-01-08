@@ -9,7 +9,7 @@ python3 gait_generator.py -n <name> <--mini> --dx X --dy Y --dt T --length L -o 
 ## Generate multiple gaits
 
 ```bash
-python3 auto_gait_generator.py -o <output_dir> -n <number> <--mini> --min_dx X --max_dx X --min_dy Y --max_dy Y --min_dt T --max_dt T --length L
+python3 auto_generator.py --bdx_type [go_bdx, mini_bdx, mini2_bdx] --num 100
 ```
 
 ## Replay a move
