@@ -197,9 +197,12 @@ class Duckling(BaseTask):
 
         self.common_step_counter = 0
         self._push_robots_flag = self.cfg["env"].get("pushRobots", False)
-        self._push_step = self.cfg["env"].get("pushStep", 150) * torch.ones(self.num_envs, dtype=torch.bool, device=self.device, requires_grad=False)
-        self._push_steap_range = self.cfg["env"].get("pushStepRandomRange", 80)
+        self._push_step_interval = self.cfg["env"].get("pushStep", 150)
+        self._push_step_range = self.cfg["env"].get("pushStepRandomRange", 80)
+        self._continou_push_steps = self.cfg["env"].get("continousPushSteps", 10)
+        self._push_step = torch.randint(self._push_step_interval-self._push_step_range, self._push_step_interval+self._push_step_range, (self.num_envs,), device=self.device)
         self.max_push_vel = self.cfg["env"].get("maxPushVelXy", 0.5)
+        self._push_vels = torch_rand_float(-self.max_push_vel, self.max_push_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
 
         self.randomize_torques = self.cfg["env"].get("randomizeTorques", False)
         self.torque_multiplier_range = self.cfg["env"].get("torqueMultiplierRange", [0.85, 1.15])
@@ -276,7 +279,8 @@ class Duckling(BaseTask):
         self.actions[env_ids] = 0.
         self.avg_velocities[env_ids] = 0.
         if self._push_robots_flag:
-            self._push_step[env_ids] += torch.randint(-self._push_steap_range, self._push_steap_range, (len(env_ids),), device=self.device)
+            self._push_step[env_ids] = torch.randint(self._push_step_interval-self._push_step_range, self._push_step_interval+self._push_step_range, (len(env_ids),), device=self.device)
+            self._push_vels = torch_rand_float(-self.max_push_vel, self.max_push_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
         if self.randomize_torques:
             self.randomize_torques_factors[env_ids, :] = torch_rand_float(self.torque_multiplier_range[0], self.torque_multiplier_range[1], 
                                                                           (len(env_ids), self.num_actions), device=self.device)
@@ -729,7 +733,7 @@ class Duckling(BaseTask):
 
         # push robots
         if self._push_robots_flag:
-            push_mask = self.progress_buf == self._push_step
+            push_mask = (self.progress_buf >= self._push_step) & ((self.progress_buf) <= (self._push_step + self._continou_push_steps))
             push_env_ids = push_mask.nonzero(as_tuple=False).flatten()
             if len(push_env_ids) > 0:
                 self._push_robots(push_env_ids)            
@@ -737,7 +741,7 @@ class Duckling(BaseTask):
     
     def _push_robots(self, env_ids):
         """Random pushes the robots. Emulates an impulse by setting a randomized base velocity."""
-        self._duckling_root_states[env_ids, 7:9] = torch_rand_float(-self.max_push_vel, self.max_push_vel, (len(env_ids), 2), device=self.device)  # lin vel x/y
+        self._duckling_root_states[env_ids, 7:9] = self._push_vels[env_ids]
         self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self._root_states))
 
     def render(self, sync_frame_time=False):

@@ -119,6 +119,27 @@ def lgsk_kernel(x: torch.Tensor, scale: float = 2.0, eps:float=0.01) -> torch.Te
     return 1.0 / (scaled.exp() + eps + (-scaled).exp())
 
 @torch.jit.script
+def quat_diff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """
+    Get the difference in radians between two quaternions.
+
+    Args:
+        a: first quaternion, shape (N, 4)
+        b: second quaternion, shape (N, 4)
+    Returns:
+        Difference in radians, shape (N,)
+    """
+    b_conj = quat_conjugate(b)
+    mul = quat_mul(a, b_conj)
+    # 2 * torch.acos(torch.abs(mul[:, -1]))
+    return 2.0 * torch.asin(
+        torch.clamp(
+            torch.norm(
+                mul[:, 0:3],
+                p=2, dim=-1), max=1.0)
+    )
+
+@torch.jit.script
 def compute_standing_reward(
     duckling_root_states: torch.Tensor,
     target_root_states: torch.Tensor,

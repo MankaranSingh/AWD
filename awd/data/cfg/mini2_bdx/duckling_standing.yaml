@@ -2,7 +2,7 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 500
+  episodeLength: 600
   isFlagrun: False
   enableDebugVis: False
   
@@ -11,13 +11,13 @@ env:
   controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.5
-  numAMPObsSteps: 15
+  numAMPObsSteps: 10
 
   pushRobots: False
-  pushStep: 300 #s
+  pushStep: 150 #s
   pushStepRandomRange: 80 # push works at pushStep +- pushStepRandomRange
   continousPushSteps: 10
-  maxPushVelXy: 0.2
+  maxPushVelXy: 0.05
 
   # COM is randomized only once for each actor, but not at each reset
   randomizeCom: False
@@ -26,23 +26,22 @@ env:
   torqueMultiplierRange: [0.85, 1.15]
 
   customControl: False
-  
+
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
-  contactBodies: ["left_foot_link", "right_foot_link"]
-  maskJoints: [] #['neck_pitch', 'head_pitch', 'head_yaw', 'head_roll', 'left_antenna', 'right_antenna']
+  contactBodies: ["foot_assembly", "foot_assembly_2"]
   maskJointRandomRange: [-0.5, 0.5]
-  terminationHeight: -0.05
+  terminationHeight: -0.1
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
-  commandChangeStepsMin: 1000
-  commandChangeStepsMax: 1001
+  commandChangeStepsMin: 150
+  commandChangeStepsMax: 200
   period: 0.84
 
   asset:
     assetRoot: "awd/data/assets"
-    assetFileName: "go_bdx/go_bdx.urdf"
+    assetFileName: "mini2_bdx/mini2_bdx.urdf"
 
   plane:
     staticFriction: 1.0
@@ -51,23 +50,22 @@ env:
 
   learn:
     # rewards
-    linearVelocityXYRewardScale: [1.0, 0.5]
-    angularVelocityZRewardScale: 0.5
-    torqueRewardScale: -0.001
-    feetAirTimeRewardScale: 0.01
-    actionRateRewardScale: -0.005
-    standStillRewardScale: 0.0
+    linTrackingRewardScale: 0.1
+    angTrackingRewardScale: 1.0
+    torqueRewardScale: -0.0000
+    actionRateRewardScale: -0.01
+    linVelPenalizeScale: -1.0
+    angVelPenalizeScale: -1.0
 
     # normalization
-    linearVelocityScale: [1.0, 1.0]
-    angularVelocityScale: 0.25
-    useAverageVelocities: True
+    linearScale: 1.0
+    angularScale: 1.0
+    useAverageVelocities: False
 
-  randomCommandVelocityRanges:
-    linear_x: [-0.5, 0.6] # min max [m/s]
-    linear_y: [-0.4, 0.4]   # min max [m/s]
-    yaw: [-1.0, 1.0]          # min max [rad/s]
-  
+  randomCommandRanges:
+    linear: [-0.03, 0.02] # min max [m]
+    angular: [-10, 10]   # min max [deg]
+
   terrain:
     terrainType: plane # plane, or trimesh
     staticFriction: 1.0 # [-]
@@ -75,10 +73,10 @@ env:
     restitution: 0. # [-]
     # rough terrain only:
     curriculum: true
-    maxInitMapLevel: 2
+    maxInitMapLevel: 0
     mapLength: 15
     mapWidth: 15
-    numLevels: 4
+    numLevels: 10
     numTerrains: 10
     # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
     terrainProportions: [0.2, 0.2, 0.2, 0.2, 0.2]
