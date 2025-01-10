@@ -16,7 +16,7 @@ env:
   pushRobots: False
   pushStep: 150 #s
   pushStepRandomRange: 80 # push works at pushStep +- pushStepRandomRange
-  continousPushSteps: 10
+  continousPushSteps: 30
   maxPushVelXy: 0.05
 
   # COM is randomized only once for each actor, but not at each reset
@@ -34,10 +34,13 @@ env:
   terminationHeight: -0.1
   enableEarlyTermination: True
   enableTaskObs: True
+  terminationHeight: -0.05
+  initHeight: 0.2
+  maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw']
   randomizeMaskJoints: False
   commandChangeStepsMin: 150
   commandChangeStepsMax: 200
-  period: 0.84
+  period: 0.43
 
   asset:
     assetRoot: "awd/data/assets"
@@ -53,7 +56,7 @@ env:
     linTrackingRewardScale: 0.1
     angTrackingRewardScale: 1.0
     torqueRewardScale: -0.0000
-    actionRateRewardScale: -0.01
+    actionRateRewardScale: -0.1
     linVelPenalizeScale: -1.0
     angVelPenalizeScale: -1.0
 
@@ -63,7 +66,7 @@ env:
     useAverageVelocities: False
 
   randomCommandRanges:
-    linear: [-0.03, 0.02] # min max [m]
+    linear: [-0.01, 0.01] # min max [m]
     angular: [-10, 10]   # min max [deg]
 
   terrain:

@@ -33,7 +33,7 @@ params:
       regularizer:
         name: None
     disc:
-      units: [1024, 512]
+      units: [2, 2]
       activation: relu
 
       initializer:
