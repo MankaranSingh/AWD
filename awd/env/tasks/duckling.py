@@ -530,7 +530,10 @@ class Duckling(BaseTask):
 
         dof_names = self.gym.get_asset_dof_names(duckling_asset)
         dof_prop = self.gym.get_asset_dof_properties(duckling_asset)
-        dof_prop["driveMode"] = gymapi.DOF_MODE_POS
+        if self.custom_control or (not self._pd_control):
+            dof_prop["driveMode"] = gymapi.DOF_MODE_EFFORT
+        else:
+            dof_prop["driveMode"] = gymapi.DOF_MODE_POS
         for i, dof_name in enumerate(dof_names):
             if dof_name not in self._dof_props_config:
                 continue
@@ -673,16 +676,14 @@ class Duckling(BaseTask):
     def pre_physics_step(self, actions):
         self.actions = actions.to(self.device).clone()
         if self.custom_control: # custom position control
-            for _ in range(self.control_freq_inv):
-                self.torques = self.p_gains*(self.actions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
-                if self.randomize_torques:
-                    self.torques *= self.randomize_torques_factors
-                self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
-                self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
-                self.gym.simulate(self.sim)
-                if self.device == "cpu":
-                    self.gym.fetch_results(self.sim, True)
-                self.gym.refresh_dof_state_tensor(self.sim)
+            pd_tar = self._action_to_pd_targets(self.actions)
+            self.torques = self.p_gains*(self.actions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
+            if self.randomize_torques:
+                self.torques *= self.randomize_torques_factors
+            self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
+            if self._mask_joint_values is not None:
+                self.torques[:, self._mask_joint_ids] = self._mask_joint_values
+            self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
         elif (self._pd_control): # isaac based position contol
             pd_tar = self._action_to_pd_targets(self.actions)
             if self._mask_joint_values is not None:
@@ -692,6 +693,8 @@ class Duckling(BaseTask):
         else: # isaac based torque control
             forces = self.actions * self.motor_efforts.unsqueeze(0) * self.power_scale
             force_tensor = gymtorch.unwrap_tensor(forces)
+            if self._mask_joint_values is not None:
+                force_tensor[:, self._mask_joint_ids] = self._mask_joint_values
             self.gym.set_dof_actuation_force_tensor(self.sim, force_tensor)
 
         return
@@ -798,7 +801,7 @@ class Duckling(BaseTask):
         return mask_joint_ids, joint_ids
 
     def _action_to_pd_targets(self, action):
-        pd_tar = self._pd_action_offset + self._pd_action_scale * action + self._initial_dof_pos
+        pd_tar = self._pd_action_offset + self._pd_action_scale * action #+ self._initial_dof_pos
         return pd_tar
 
     def _init_camera(self):
