@@ -1121,7 +1121,7 @@ def compute_duckling_observations(
             # root_pos,
             # root_rot,
             # root_vel,
-            # root_ang_vel,
+            root_ang_vel,
             # key_body_pos,
             # local_root_obs,
             # root_height_obs,

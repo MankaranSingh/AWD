@@ -7,21 +7,22 @@ joints:
   - neck_pitch
   - head_pitch
   - head_yaw
-  # - left_antenna
-  # - right_antenna
+  - head_roll
+  - left_antenna
+  - right_antenna
   - right_hip_yaw
   - right_hip_roll
   - right_hip_pitch
   - right_knee
   - right_ankle
 
-dof_body_ids: [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 13]
-dof_offsets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+dof_body_ids: [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16]
+dof_offsets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
-dof_obs_size: 13
-num_obs: 44
-num_actions: 13
-num_amp_obs_per_step: 41
+dof_obs_size: 16
+num_obs: 56 # ?
+num_actions: 16
+num_amp_obs_per_step: 41 # ?
 
 # motor_efforts are only used in torque control mode (pd_control=False)
 # p_gains and d_gains are only used in custom control mode
@@ -118,6 +119,45 @@ dof_props:
       "d_gain": 0.1,
     }
   head_yaw:
+    {
+      "damping": 1.0,
+      "stiffness": 5,
+      "friction": 0.03,
+      "armature": 0.0056,
+      "velocity": 300,
+      "max_effort": 100,
+      "init_pos": 0.000,
+      "motor_efforts": 10,
+      "p_gain": 5.68,
+      "d_gain": 0.1,
+    }
+  head_roll:
+    {
+      "damping": 1.0,
+      "stiffness": 5,
+      "friction": 0.03,
+      "armature": 0.0056,
+      "velocity": 300,
+      "max_effort": 100,
+      "init_pos": 0.000,
+      "motor_efforts": 10,
+      "p_gain": 5.68,
+      "d_gain": 0.1,
+    }
+  left_antenna:
+    {
+      "damping": 1.0,
+      "stiffness": 5,
+      "friction": 0.03,
+      "armature": 0.0056,
+      "velocity": 300,
+      "max_effort": 100,
+      "init_pos": 0.000,
+      "motor_efforts": 10,
+      "p_gain": 5.68,
+      "d_gain": 0.1,
+    }
+  right_antenna:
     {
       "damping": 1.0,
       "stiffness": 5,

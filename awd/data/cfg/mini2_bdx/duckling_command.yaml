@@ -30,7 +30,7 @@ env:
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
   contactBodies: ["foot_assembly", "foot_assembly_2"]
-  maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw']
+  maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw', "head_roll", "left_antenna", "right_antenna"]
   maskJointRandomRange: [-0.5, 0.5]
   terminationHeight: -0.05
   initHeight: 0.2
@@ -54,9 +54,9 @@ env:
     # rewards
     linearVelocityXYRewardScale: [1.0, 1.0]
     angularVelocityZRewardScale: 1.5
-    torqueRewardScale: -0.001
+    torqueRewardScale: -0.000
     feetAirTimeRewardScale: 1.0
-    actionRateRewardScale: -0.5
+    actionRateRewardScale: -0.05
     standStillRewardScale: 0.0
 
     # normalization
@@ -67,7 +67,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.3, 0.45] # min max [m/s]
     linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.1, 0.1]          # min max [rad/s]
+    yaw: [-0.8, 0.8]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
