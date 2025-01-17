@@ -25,7 +25,7 @@ env:
   randomizeTorques: False
   torqueMultiplierRange: [0.85, 1.15]
 
-  customControl: True
+  customControl: False
 
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
@@ -33,13 +33,13 @@ env:
   maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw', "head_roll", "left_antenna", "right_antenna"]
   maskJointRandomRange: [-0.5, 0.5]
   terminationHeight: -0.05
-  initHeight: 0.2
+  initHeight: 0.15
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
   commandChangeStepsMin: 1000
   commandChangeStepsMax: 1001
-  period: 0.43
+  period: 0.54
 
   asset:
     assetRoot: "awd/data/assets"
@@ -67,7 +67,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.3, 0.45] # min max [m/s]
     linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.8, 0.8]          # min max [rad/s]
+    yaw: [-0.3, 0.3]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh

@@ -1541,8 +1541,8 @@
         <child link="foot_assembly" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-1.570796326794896558"
             upper="1.570796326794896558"
         />
@@ -1557,8 +1557,8 @@
         <child link="knee_and_ankle_assembly_2" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-1.570796326794896558"
             upper="1.570796326794896558"
         />
@@ -1573,8 +1573,8 @@
         <child link="knee_and_ankle_assembly" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-1.2217304763960306069"
             upper="0.52359877559829881566"
         />
@@ -1589,8 +1589,8 @@
         <child link="left_roll_to_pitch_assembly" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-0.43633231299858238339"
             upper="0.43633231299858238339"
         />
@@ -1605,8 +1605,8 @@
         <child link="hip_roll_assembly" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-0.52359877559829881566"
             upper="0.52359877559829881566"
         />
@@ -2504,8 +2504,8 @@
         <child link="foot_assembly_2" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-1.570796326794896558"
             upper="1.570796326794896558"
         />
@@ -2520,8 +2520,8 @@
         <child link="knee_and_ankle_assembly_4" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-1.570796326794896558"
             upper="1.570796326794896558"
         />
@@ -2536,8 +2536,8 @@
         <child link="knee_and_ankle_assembly_3" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-0.52359877559829881566"
             upper="1.2217304763960306069"
         />
@@ -2552,8 +2552,8 @@
         <child link="right_roll_to_pitch_assembly" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-0.43633231299858238339"
             upper="0.43633231299858238339"
         />
@@ -2568,8 +2568,8 @@
         <child link="hip_roll_assembly_2" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-0.52359877559829881566"
             upper="0.52359877559829881566"
         />
@@ -3350,8 +3350,8 @@
         <child link="left_antenna_holder" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-1.570796326794896558"
             upper="1.570796326794896558"
         />
@@ -3429,8 +3429,8 @@
         <child link="right_antenna_holder" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-1.570796326794896558"
             upper="1.570796326794896558"
         />
@@ -3445,8 +3445,8 @@
         <child link="head_assembly" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-0.52359877559829881566"
             upper="0.52359877559829881566"
         />
@@ -3461,8 +3461,8 @@
         <child link="neck_yaw_assembly" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-2.7925268031909271649"
             upper="2.7925268031909271649"
         />
@@ -3477,8 +3477,8 @@
         <child link="head_pitch_to_yaw" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-0.785398163397448279"
             upper="0.785398163397448279"
         />
@@ -3493,8 +3493,8 @@
         <child link="neck_pitch_assembly" />
         <axis xyz="0 0 1" />
         <limit
-            effort="1"
-            velocity="20"
+            effort="20"
+            velocity="200"
             lower="-0.34906585039886589561"
             upper="1.1344640137963142301"
         />

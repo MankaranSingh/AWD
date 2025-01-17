@@ -676,7 +676,6 @@ class Duckling(BaseTask):
     def pre_physics_step(self, actions):
         self.actions = actions.to(self.device).clone()
         if self.custom_control: # custom position control
-            pd_tar = self._action_to_pd_targets(self.actions)
             self.torques = self.p_gains*(self.actions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
             if self.randomize_torques:
                 self.torques *= self.randomize_torques_factors
@@ -685,7 +684,7 @@ class Duckling(BaseTask):
                 self.torques[:, self._mask_joint_ids] = self._mask_joint_values
             self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
         elif (self._pd_control): # isaac based position contol
-            pd_tar = self._action_to_pd_targets(self.actions)
+            pd_tar = self._action_to_pd_targets(self.actions) + self._initial_dof_pos
             if self._mask_joint_values is not None:
                 pd_tar[:, self._mask_joint_ids] = self._mask_joint_values
             pd_tar_tensor = gymtorch.unwrap_tensor(pd_tar)
