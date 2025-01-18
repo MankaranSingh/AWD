@@ -1575,8 +1575,8 @@
         <limit
             effort="20"
             velocity="200"
-            lower="-1.2217304763960306069"
-            upper="0.52359877559829881566"
+            lower="-1.570796326794896558"
+            upper="0.72359877559829881566"
         />
         <joint_properties friction="0.0" />
     </joint>
@@ -2538,8 +2538,8 @@
         <limit
             effort="20"
             velocity="200"
-            lower="-0.52359877559829881566"
-            upper="1.2217304763960306069"
+            lower="-0.72359877559829881566"
+            upper="1.5707304763960306069"
         />
         <joint_properties friction="0.0" />
     </joint>

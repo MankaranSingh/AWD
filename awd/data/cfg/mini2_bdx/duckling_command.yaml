@@ -67,7 +67,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.3, 0.45] # min max [m/s]
     linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.3, 0.3]          # min max [rad/s]
+    yaw: [-0.1, 0.1]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
