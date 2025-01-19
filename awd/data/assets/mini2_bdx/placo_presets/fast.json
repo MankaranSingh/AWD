@@ -8,7 +8,7 @@
   "startend_double_support_ratio": 1.0,
   "planned_timesteps": 48,
   "replan_timesteps": 10,
-  "walk_com_height": 0.19,
+  "walk_com_height": 0.21,
   "walk_foot_height": 0.03,
   "walk_trunk_pitch": 5,
   "walk_foot_rise_ratio": 0.02,
