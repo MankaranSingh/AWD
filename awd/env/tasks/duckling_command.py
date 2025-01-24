@@ -28,6 +28,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.rew_scales["air_time"] = self.cfg["env"]["learn"]["feetAirTimeRewardScale"]
         self.rew_scales["action_rate"] = self.cfg["env"]["learn"]["actionRateRewardScale"]
         self.rew_scales["standstill"] = self.cfg["env"]["learn"]["standStillRewardScale"]
+        self.rew_scales["foot_slide"] = self.cfg["env"]["learn"]["footSlideRewardScale"]
 
         # reward episode sums
         self.episode_reward_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
@@ -141,14 +142,17 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         #rew_airTime *= torch.norm(self.commands, dim=1) > 0.1 #no reward for zero command
         self.feet_air_time *= ~contact
 
+        foot_vel = self._rigid_body_vel[:, self._contact_body_ids, :2]
+        foot_slide_reward = torch.sum(foot_vel.norm(dim=-1) * contact, dim=1) * self.rew_scales["foot_slide"]
+
         # action rate penalty
         rew_action_rate = torch.sum(torch.square(self.last_actions - self.actions), dim=1) * self.rew_scales["action_rate"]
         rew_lin_vel_x, rew_lin_vel_y, rew_ang_vel_z, rew_torque = compute_task_reward(self._duckling_root_states, self.commands,  self.torques, self.avg_velocities, self.rew_scales, self.use_average_velocities)
 
         # Penalize motion at zero commands
-        rew_standstill = (torch.sum(torch.abs(self.dof_pos - self.default_dof_pos), dim=1) * (torch.norm(self.commands[:, :2], dim=1) < 0.05)) * self.rew_scales["standstill"]
+        rew_standstill = (torch.sum(torch.square(self.dof_pos - self.default_dof_pos), dim=1) * (torch.norm(self.commands[:, :2], dim=1) < 0.05)) * self.rew_scales["standstill"]
     
-        self.rew_buf[:] = torch.clip(rew_lin_vel_x + rew_lin_vel_y + rew_ang_vel_z + rew_torque, 0., None) + rew_action_rate + rew_airTime + rew_standstill
+        self.rew_buf[:] = torch.clip(rew_lin_vel_x + rew_lin_vel_y + rew_ang_vel_z, 0., None) + rew_torque + + rew_action_rate + rew_airTime + rew_standstill + foot_slide_reward
 
         self.episode_reward_sums["lin_vel_x"] += rew_lin_vel_x
         self.episode_reward_sums["lin_vel_y"] += rew_lin_vel_y
@@ -157,6 +161,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.episode_reward_sums["air_time"] += rew_airTime 
         self.episode_reward_sums["action_rate"] += rew_action_rate
         self.episode_reward_sums["standstill"] += rew_standstill
+        self.episode_reward_sums["foot_slide"] += foot_slide_reward
         return
 
 #####################################################################

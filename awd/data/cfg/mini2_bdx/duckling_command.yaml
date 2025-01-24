@@ -7,17 +7,17 @@ env:
   enableDebugVis: False
   
   pdControl: True
-  powerScale: 1.0
-  controlFrequencyInv: 2 # 30 Hz
+  powerScale: 1
+  controlFrequencyInv: 4 # 30 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.5
   numAMPObsSteps: 20
 
   pushRobots: False
-  pushStep: 300 #s
+  pushStep: 200
   pushStepRandomRange: 80 # push works at pushStep +- pushStepRandomRange
   continousPushSteps: 10
-  maxPushVelXy: 0.05
+  maxPushVelXy: 0.4
 
   # COM is randomized only once for each actor, but not at each reset
   randomizeCom: False
@@ -33,13 +33,13 @@ env:
   maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw', "head_roll", "left_antenna", "right_antenna"]
   maskJointRandomRange: [-0.5, 0.5]
   terminationHeight: -0.05
-  initHeight: 0.15
+  initHeight: 0.17
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
-  commandChangeStepsMin: 1000
-  commandChangeStepsMax: 1001
-  period: 0.54
+  commandChangeStepsMin: 2500
+  commandChangeStepsMax: 3000
+  period: 0.66
 
   asset:
     assetRoot: "awd/data/assets"
@@ -53,21 +53,27 @@ env:
   learn:
     # rewards
     linearVelocityXYRewardScale: [1.0, 1.0]
-    angularVelocityZRewardScale: 1.5
-    torqueRewardScale: -0.000
-    feetAirTimeRewardScale: 1.0
-    actionRateRewardScale: -0.5
-    standStillRewardScale: 0.0
+    angularVelocityZRewardScale: 1.0
+    torqueRewardScale: -0.005
+    feetAirTimeRewardScale: 0.05
+    actionRateRewardScale: -0.005
+    standStillRewardScale: -0.3
+    footSlideRewardScale: -0.0005
 
     # normalization
-    linearVelocityScale: [1.0, 1.0]
-    angularVelocityScale: 1.0
+    linearVelocityScale: [2.0, 2.0]
+    angularVelocityScale: 0.25
     useAverageVelocities: True
+
+  # randomCommandVelocityRanges:
+  #   linear_x: [0, 0.] # min max [m/s]
+  #   linear_y: [0, 0.]   # min max [m/s]
+  #   yaw: [0., 0.]          # min max [rad/s]
 
   randomCommandVelocityRanges:
     linear_x: [-0.3, 0.45] # min max [m/s]
     linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.1, 0.1]          # min max [rad/s]
+    yaw: [-0.2, 0.2]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh

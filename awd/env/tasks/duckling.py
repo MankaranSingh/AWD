@@ -29,6 +29,7 @@
 import numpy as np
 import os
 import torch
+import time
 import yaml
 import xml.etree.ElementTree as ET
 
@@ -199,7 +200,7 @@ class Duckling(BaseTask):
         self._push_robots_flag = self.cfg["env"].get("pushRobots", False)
         self._push_step_interval = self.cfg["env"].get("pushStep", 150)
         self._push_step_range = self.cfg["env"].get("pushStepRandomRange", 80)
-        self._continou_push_steps = self.cfg["env"].get("continousPushSteps", 10)
+        self._continous_push_steps = self.cfg["env"].get("continousPushSteps", 10)
         self._push_step = torch.randint(self._push_step_interval-self._push_step_range, self._push_step_interval+self._push_step_range, (self.num_envs,), device=self.device)
         self.max_push_vel = self.cfg["env"].get("maxPushVelXy", 0.5)
         self._push_vels = torch_rand_float(-self.max_push_vel, self.max_push_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
@@ -675,27 +676,39 @@ class Duckling(BaseTask):
 
     def pre_physics_step(self, actions):
         self.actions = actions.to(self.device).clone()
-        if self.custom_control: # custom position control
-            self.torques = self.p_gains*(self.actions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
-            if self.randomize_torques:
-                self.torques *= self.randomize_torques_factors
-            self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
-            if self._mask_joint_values is not None:
-                self.torques[:, self._mask_joint_ids] = self._mask_joint_values
-            self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
-        elif (self._pd_control): # isaac based position contol
-            pd_tar = self._action_to_pd_targets(self.actions) + self._initial_dof_pos
-            if self._mask_joint_values is not None:
-                pd_tar[:, self._mask_joint_ids] = self._mask_joint_values
-            pd_tar_tensor = gymtorch.unwrap_tensor(pd_tar)
-            self.gym.set_dof_position_target_tensor(self.sim, pd_tar_tensor)
-        else: # isaac based torque control
-            forces = self.actions * self.motor_efforts.unsqueeze(0) * self.power_scale
-            force_tensor = gymtorch.unwrap_tensor(forces)
-            if self._mask_joint_values is not None:
-                force_tensor[:, self._mask_joint_ids] = self._mask_joint_values
-            self.gym.set_dof_actuation_force_tensor(self.sim, force_tensor)
+        self.render()
+        for _ in range(self.control_freq_inv):
+            # control strategy
+            if self.custom_control: # custom position control
+                if self._mask_joint_values is not None:
+                    self.actions[:, self._mask_joint_ids] = self._mask_joint_values
+                self.torques = self.p_gains*(self.actions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
+                if self.randomize_torques:
+                    self.torques *= self.randomize_torques_factors
+                self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
+                self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
+            elif (self._pd_control): # isaac based position contol
+                pd_tar = self._action_to_pd_targets(self.actions) + self._initial_dof_pos
+                if self._mask_joint_values is not None:
+                    pd_tar[:, self._mask_joint_ids] = self._mask_joint_values
+                pd_tar_tensor = gymtorch.unwrap_tensor(pd_tar)
+                self.gym.set_dof_position_target_tensor(self.sim, pd_tar_tensor)
+            else: # isaac based torque control
+                forces = self.actions * self.motor_efforts.unsqueeze(0) * self.power_scale
+                force_tensor = gymtorch.unwrap_tensor(forces)
+                if self._mask_joint_values is not None:
+                    force_tensor[:, self._mask_joint_ids] = self._mask_joint_values
+                self.gym.set_dof_actuation_force_tensor(self.sim, force_tensor)
 
+            self.gym.simulate(self.sim)
+            if self.cfg["args"].test:
+                elapsed_time = self.gym.get_elapsed_time(self.sim)
+                sim_time = self.gym.get_sim_time(self.sim)
+                if sim_time-elapsed_time>0:
+                    time.sleep(sim_time-elapsed_time)
+            if self.device == 'cpu':
+                self.gym.fetch_results(self.sim, True)
+            self.gym.refresh_dof_state_tensor(self.sim)
         return
 
     def post_physics_step(self):
@@ -735,8 +748,10 @@ class Duckling(BaseTask):
 
         # push robots
         if self._push_robots_flag:
-            push_mask = (self.progress_buf >= self._push_step) & ((self.progress_buf) <= (self._push_step + self._continou_push_steps))
+            push_mask = (self.progress_buf >= self._push_step) & ((self.progress_buf) <= (self._push_step + self._continous_push_steps))
             push_env_ids = push_mask.nonzero(as_tuple=False).flatten()
+            update_push_step_mask = self.progress_buf == (self._push_step + self._continous_push_steps)
+            self._push_step[update_push_step_mask] += self._push_step_interval
             if len(push_env_ids) > 0:
                 self._push_robots(push_env_ids)            
         return
@@ -1116,11 +1131,11 @@ def compute_duckling_observations(
             projected_gravity,
             dof_pos,
             dof_vel,
-            foot_contacts,
+            # foot_contacts,
             # root_pos,
             # root_rot,
             # root_vel,
-            root_ang_vel,
+            # root_ang_vel,
             # key_body_pos,
             # local_root_obs,
             # root_height_obs,
