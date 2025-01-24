@@ -405,10 +405,11 @@ class Duckling(BaseTask):
         asset_file = os.path.basename(asset_path)
 
         asset_options = gymapi.AssetOptions()
-        # asset_options.density = 0.001
-        # asset_options.armature = 0.0
-        # asset_options.thickness = 0.01
-        asset_options.angular_damping = 0.01
+        asset_options.density = 0.001
+        asset_options.armature = 0.0
+        asset_options.thickness = 0.01
+        asset_options.angular_damping = 0.0
+        asset_options.linear_damping = 0.0
         asset_options.max_angular_velocity = 100.0
         asset_options.max_linear_velocity = 100.0
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
@@ -533,8 +534,11 @@ class Duckling(BaseTask):
         dof_prop = self.gym.get_asset_dof_properties(duckling_asset)
         if self.custom_control or (not self._pd_control):
             dof_prop["driveMode"] = gymapi.DOF_MODE_EFFORT
+            props_to_set = ["friction", "armature", "velocity", "effort"]
         else:
             dof_prop["driveMode"] = gymapi.DOF_MODE_POS
+            props_to_set = ["stiffness", "damping", "friction", "armature", "velocity", "effort"]
+
         for i, dof_name in enumerate(dof_names):
             if dof_name not in self._dof_props_config:
                 continue
