@@ -535,6 +535,8 @@ class Duckling(BaseTask):
         if self.custom_control or (not self._pd_control):
             dof_prop["driveMode"] = gymapi.DOF_MODE_EFFORT
             props_to_set = ["friction", "armature", "velocity", "effort"]
+            if not self.custom_control:
+                props_to_set += ["stiffness", "damping"]
         else:
             dof_prop["driveMode"] = gymapi.DOF_MODE_POS
             props_to_set = ["stiffness", "damping", "friction", "armature", "velocity", "effort"]
@@ -542,11 +544,9 @@ class Duckling(BaseTask):
         for i, dof_name in enumerate(dof_names):
             if dof_name not in self._dof_props_config:
                 continue
-            for prop_type in ["stiffness", "damping", "friction", "armature", "velocity"]:
+            for prop_type in props_to_set:
                 if self._dof_props_config[dof_name].get(prop_type, None) is not None:
                     dof_prop[prop_type][i] = self._dof_props_config[dof_name][prop_type]
-                else:
-                    print(f"WARNING: No stiffness values for {dof_name}")
             self.gym.set_actor_dof_properties(env_ptr, duckling_handle, dof_prop)
         self.duckling_handles.append(duckling_handle)
 

@@ -14,7 +14,7 @@ env:
   numAMPObsSteps: 20
 
   pushRobots: False
-  pushStep: 200
+  pushStep: 150
   pushStepRandomRange: 80 # push works at pushStep +- pushStepRandomRange
   continousPushSteps: 10
   maxPushVelXy: 0.4
