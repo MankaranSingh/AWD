@@ -209,6 +209,10 @@ class Duckling(BaseTask):
         self.torque_multiplier_range = self.cfg["env"].get("torqueMultiplierRange", [0.85, 1.15])
         if self.randomize_torques:
             self.randomize_torques_factors = torch.ones(self.num_envs, self.num_actions, device=self.device)
+        
+        self.add_obs_noise = self.cfg["task"].get("observation_randomizations", {}).get("enable", False)
+        if self.add_obs_noise:
+            self.obs_noise_vec = self._get_obs_noise_scale_vec(self.cfg["task"]["observation_randomizations"])
    
         if self.viewer != None:
             self._init_camera()
@@ -218,6 +222,9 @@ class Duckling(BaseTask):
 
     def get_obs_size(self):
         return self._num_obs
+
+    def get_task_obs_size(self):
+        return 0
 
     def get_action_size(self):
         return self._num_actions
@@ -629,7 +636,6 @@ class Duckling(BaseTask):
     def _compute_observations(self, env_ids=None):
         obs = self._compute_duckling_obs(env_ids)
 
-        # TODO
         if (env_ids is None):
             self.obs_buf[:] = obs
         else:
@@ -659,17 +665,10 @@ class Duckling(BaseTask):
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
                                                 self.projected_gravity[env_ids], foot_contacts[env_ids], self.actions[env_ids], self.last_actions[env_ids])        
-        # obs = compute_duckling_observations_max(body_pos, body_rot, body_vel, body_ang_vel, self._local_root_obs,
-        #                                         self._root_height_obs)
 
-        # key_body_pos = self._rigid_body_pos[:, self._key_body_ids, :]
-        # obs = compute_duckling_observations(self._rigid_body_pos[env_ids][:, 0, :],
-        #                                     self._rigid_body_rot[env_ids][:, 0, :],
-        #                                     self._rigid_body_vel[env_ids][:, 0, :],
-        #                                     self._rigid_body_ang_vel[env_ids][:, 0, :],
-        #                                     self._dof_pos[env_ids], self._dof_vel[env_ids], key_body_pos[env_ids],
-        #                                     self._local_root_obs, self._root_height_obs, 
-        #                                     self._dof_obs_size, self._dof_offsets, self._dof_axis_array)
+        if self.add_obs_noise:
+            obs += (2 * torch.rand_like(obs) - 1) * self.obs_noise_vec
+
         return obs
 
     def _reset_actors(self, env_ids):
@@ -866,6 +865,62 @@ class Duckling(BaseTask):
     def _update_debug_viz(self):
         self.gym.clear_lines(self.viewer)
         return
+
+    def _get_obs_noise_scale_vec(self, noise_cfg):
+        noise_vec = torch.zeros(self.get_obs_size()-self.get_task_obs_size(), device=self.device)
+        idx = 0
+        noise_vec[idx:idx+3] = noise_cfg["gravity"]
+        idx += 3
+        noise_vec[idx:idx+self.num_dof] = noise_cfg["dof_pos"]
+        idx += self.num_dof
+        noise_vec[idx:idx+self.num_dof] = noise_cfg["dof_vel"]
+        idx += self.num_dof
+
+        return noise_vec
+
+
+@torch.jit.script
+def compute_duckling_observations(
+    root_pos,
+    root_rot,
+    root_vel,
+    root_ang_vel,
+    dof_pos,
+    dof_vel,
+    key_body_pos,
+    local_root_obs,
+    root_height_obs,
+    dof_obs_size,
+    dof_offsets,
+    dof_axis,
+    projected_gravity,
+    foot_contacts,
+    actions,
+    last_actions,
+):
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor, Tensor, Tensor) -> Tensor
+    # realistic observations
+
+    # heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
+    # local_root_vel = quat_rotate(heading_rot, root_vel)
+    # local_root_ang_vel = quat_rotate(heading_rot, root_ang_vel)
+    
+    obs = torch.cat(
+        (
+            projected_gravity,
+            dof_pos,
+            dof_vel,
+            # foot_contacts,
+            # local_root_vel,
+            # local_root_ang_vel,
+            # local_root_obs,
+            # root_height_obs,
+            actions,
+            # last_actions,
+        ),
+        dim=-1,
+    )
+    return obs
 
 class Terrain:
     def __init__(self, cfg, num_robots) -> None:
@@ -1107,104 +1162,6 @@ def dof_to_obs(pose, dof_obs_size, dof_offsets, dof_axis):
     assert((num_joints * joint_obs_size) == dof_obs_size)
 
     return dof_obs
-
-@torch.jit.script
-def compute_duckling_observations(
-    root_pos,
-    root_rot,
-    root_vel,
-    root_ang_vel,
-    dof_pos,
-    dof_vel,
-    key_body_pos,
-    local_root_obs,
-    root_height_obs,
-    dof_obs_size,
-    dof_offsets,
-    dof_axis,
-    projected_gravity,
-    foot_contacts,
-    actions,
-    last_actions,
-):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor, Tensor, Tensor) -> Tensor
-    # realistic observations
-
-    obs = torch.cat(
-        (
-            projected_gravity,
-            dof_pos,
-            dof_vel,
-            # foot_contacts,
-            # root_pos,
-            # root_rot,
-            # root_vel,
-            # root_ang_vel,
-            # key_body_pos,
-            # local_root_obs,
-            # root_height_obs,
-            actions,
-            # last_actions,
-        ),
-        dim=-1,
-    )
-    return obs
-
-    # Below is full obs (original implementation)
-    # If using full obs, need to edit dof_obs_size and num_obs in props.yaml
-
-    # root_h = root_pos[:, 2:3]
-    # heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
-
-    # if local_root_obs:
-    #     root_rot_obs = quat_mul(heading_rot, root_rot)
-    # else:
-    #     root_rot_obs = root_rot
-    # root_rot_obs = torch_utils.quat_to_tan_norm(root_rot_obs)
-
-    # if not root_height_obs:
-    #     root_h_obs = torch.zeros_like(root_h)
-    # else:
-    #     root_h_obs = root_h
-
-    # local_root_vel = quat_rotate(heading_rot, root_vel)
-    # local_root_ang_vel = quat_rotate(heading_rot, root_ang_vel)
-
-    # root_pos_expand = root_pos.unsqueeze(-2)
-    # local_key_body_pos = key_body_pos - root_pos_expand
-
-    # heading_rot_expand = heading_rot.unsqueeze(-2)
-    # heading_rot_expand = heading_rot_expand.repeat((1, local_key_body_pos.shape[1], 1))
-    # flat_end_pos = local_key_body_pos.view(
-    #     local_key_body_pos.shape[0] * local_key_body_pos.shape[1],
-    #     local_key_body_pos.shape[2],
-    # )
-    # flat_heading_rot = heading_rot_expand.view(
-    #     heading_rot_expand.shape[0] * heading_rot_expand.shape[1],
-    #     heading_rot_expand.shape[2],
-    # )
-    # local_end_pos = quat_rotate(flat_heading_rot, flat_end_pos)
-    # flat_local_key_pos = local_end_pos.view(
-    #     local_key_body_pos.shape[0],
-    #     local_key_body_pos.shape[1] * local_key_body_pos.shape[2],
-    # )
-
-    # dof_obs = dof_to_obs(dof_pos, dof_obs_size, dof_offsets, dof_axis)
-
-    # obs = torch.cat(
-    #     (
-    #         root_h_obs,
-    #         root_rot_obs,
-    #         local_root_vel,
-    #         local_root_ang_vel,
-    #         dof_obs,
-    #         dof_vel,
-    #         flat_local_key_pos,
-    #     ),
-    #     dim=-1,
-    # )
-
-    # return obs
 
 @torch.jit.script
 def compute_duckling_observations_max(body_pos, body_rot, body_vel, body_ang_vel, local_root_obs, root_height_obs):

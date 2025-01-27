@@ -25,7 +25,7 @@ env:
   randomizeTorques: False
   torqueMultiplierRange: [0.85, 1.15]
 
-  customControl: True
+  customControl: False
 
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
@@ -122,17 +122,27 @@ sim:
 
 
 task:
+  # custom randomization code for observations (each step)
+  observation_randomizations:
+    enable: True
+    dof_pos: 0.01
+    dof_vel: 1.5
+    lin_vel: 0.1
+    ang_vel: 0.2
+    gravity: 0.05
+  
+  # standard isaac envs randomizations.
   randomize: False
   randomization_params:
     frequency: 600   # Define how many environment steps between generating new randomizations
-    observations:
-      range: [0, .002] # range for the white noise
-      operation: "additive"
-      distribution: "gaussian"
-    actions:
-      range: [0., .02]
-      operation: "additive"
-      distribution: "gaussian"
+    # observations:
+    #   range: [0, .002] # range for the white noise
+    #   operation: "additive"
+    #   distribution: "gaussian"
+    # actions:
+    #   range: [0., .02]
+    #   operation: "additive"
+    #   distribution: "gaussian"
     sim_params: 
       gravity:
         range: [0, 0.4]
