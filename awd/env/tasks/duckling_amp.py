@@ -106,7 +106,7 @@ class DucklingAMP(Duckling):
         
         # since negative times are added to these values in build_amp_obs_demo,
         # we shift them into the range [0 + truncate_time, end of clip]
-        truncate_time = self.dt * (self._num_amp_obs_steps - 1)
+        truncate_time = self.control_dt * (self._num_amp_obs_steps - 1)
         motion_times0 = self._motion_lib.sample_time(motion_ids, truncate_time=truncate_time)
         motion_times0 += truncate_time
 
@@ -117,11 +117,9 @@ class DucklingAMP(Duckling):
         return amp_obs_demo_flat
 
     def build_amp_obs_demo(self, motion_ids, motion_times0):
-        dt = self.dt
-
         motion_ids = torch.tile(motion_ids.unsqueeze(-1), [1, self._num_amp_obs_steps])
         motion_times = motion_times0.unsqueeze(-1)
-        time_steps = -dt * torch.arange(0, self._num_amp_obs_steps, device=self.device)
+        time_steps = -self.control_dt * torch.arange(0, self._num_amp_obs_steps, device=self.device)
         motion_times = torch.clip(motion_times + time_steps, min=0)
 
         motion_ids = motion_ids.view(-1)
@@ -152,7 +150,7 @@ class DucklingAMP(Duckling):
         self._motion_lib = AMPLoader(
             motion_files=motion_files,
             device=self.device,
-            time_between_frames=self.dt,
+            time_between_frames=self.control_dt,
             key_body_ids=self._key_body_ids.cpu().numpy(), 
         )
         return
@@ -262,10 +260,9 @@ class DucklingAMP(Duckling):
         return
 
     def _init_amp_obs_ref(self, env_ids, motion_ids, motion_times):
-        dt = self.dt
         motion_ids = torch.tile(motion_ids.unsqueeze(-1), [1, self._num_amp_obs_steps - 1])
         motion_times = motion_times.unsqueeze(-1)
-        time_steps = -dt * (torch.arange(0, self._num_amp_obs_steps - 1, device=self.device) + 1)
+        time_steps = -self.control_dt * (torch.arange(0, self._num_amp_obs_steps - 1, device=self.device) + 1)
         motion_times = motion_times + time_steps
 
         motion_ids = motion_ids.view(-1)

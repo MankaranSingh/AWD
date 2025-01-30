@@ -2,26 +2,26 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 500
+  episodeLength: 20 #s
   isFlagrun: False
   enableDebugVis: False
   
   pdControl: True
   powerScale: 1.0
-  controlFrequencyInv: 4 # 30 Hz
+  controlFrequencyInv: 2 # 50 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.5
   numAMPObsSteps: 20
 
   pushRobots: False
-  pushStep: 150
-  pushStepRandomRange: 80 # push works at pushStep +- pushStepRandomRange
+  pushStep: 3 #s
+  pushStepRandomRange: 1 #s | push works at pushStep +- pushStepRandomRange
   continousPushSteps: 10
-  maxPushVelXy: 0.4
+  maxPushVelXy: 0.2 # m/s
 
   # COM is randomized only once for each actor, but not at each reset
   randomizeCom: False
-  comRandomizeRange: [-0.05, 0.05]
+  comRandomizeRange: [-0.03, 0.03]
   randomizeTorques: False
   torqueMultiplierRange: [0.85, 1.15]
 
@@ -37,9 +37,9 @@ env:
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
-  commandChangeStepsMin: 2500
-  commandChangeStepsMax: 3000
-  period: 0.66
+  commandChangeStepsMin: 7 #s
+  commandChangeStepsMax: 8 #s
+  period: 0.66 #s
 
   asset:
     assetRoot: "awd/data/assets"
@@ -73,7 +73,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.3, 0.45] # min max [m/s]
     linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.2, 0.2]          # min max [rad/s]
+    yaw: [-0.8, 0.8]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
@@ -105,16 +105,16 @@ env:
 sim:
   substeps: 1
   physx:
-    num_threads: 8
+    num_threads: 4
     solver_type: 1  # 0: pgs, 1: tgs
     num_position_iterations: 4
-    num_velocity_iterations: 0
-    contact_offset: 0.01
+    num_velocity_iterations: 1
+    contact_offset: 0.02
     rest_offset: 0.0
-    bounce_threshold_velocity: 0.5
-    max_depenetration_velocity: 1.0
+    bounce_threshold_velocity: 0.2
+    max_depenetration_velocity: 100.0
     default_buffer_size_multiplier: 5.0
-    contact_collection: 2
+    contact_collection: 1
 
   flex:
     num_inner_iterations: 10
@@ -126,19 +126,19 @@ task:
   observation_randomizations:
     enable: False
     dof_pos_noise: 0.01
-    dof_vel_noise: 1.5
+    dof_vel_noise: 0.5
     ang_vel_noise: 0.2
     gravity_noise: 0.05
   
   add_obs_latency: False
   randomize_obs_motor_latency: False
-  range_obs_motor_latency: [2, 10]
+  range_obs_motor_latency: [0, 1] # ms
   randomize_obs_imu_latency: False
-  range_obs_imu_latency: [1, 2]
+  range_obs_imu_latency: [0, 50] #ms
   
   add_action_latency: False
   randomize_action_latency: False
-  range_action_latency: [2, 4]
+  range_action_latency: [20, 50] #ms
   
   # standard isaac envs randomizations.
   randomize: False

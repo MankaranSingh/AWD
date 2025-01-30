@@ -39,8 +39,8 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.randomize = self.cfg["task"]["randomize"]
         self._command_change_steps = self.cfg["task"]["randomize"]
 
-        self._command_change_steps_min = cfg["env"]["commandChangeStepsMin"]
-        self._command_change_steps_max = cfg["env"]["commandChangeStepsMax"]
+        self._command_change_steps_min = int(cfg["env"]["commandChangeStepsMin"] / self.control_dt)
+        self._command_change_steps_max = int(cfg["env"]["commandChangeStepsMax"] / self.control_dt)
         self._command_change_steps = torch.zeros([self.num_envs], device=self.device, dtype=torch.int64)
 
         # command ranges
@@ -53,8 +53,8 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         # for key in self.rew_scales.keys():
         #      self.rew_scales[key] *= self.dt
 
-        self.rew_scales["torque"] *= self.dt
-        self.rew_scales["action_rate"] *= self.dt
+        self.rew_scales["torque"] *= self.control_dt
+        self.rew_scales["action_rate"] *= self.control_dt
 
         # rename variables to maintain consistency with anymal env
         self.root_states = self._root_states
@@ -137,7 +137,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         
         contact = self.contact_forces[:, self._contact_body_ids, 2] > 1.
         first_contact = (self.feet_air_time > 0.) * contact
-        self.feet_air_time += self.dt
+        self.feet_air_time += self.control_dt
         rew_airTime = torch.sum((self.feet_air_time - 0.5) * first_contact, dim=1) * self.rew_scales["air_time"] # reward only on first contact with the ground
         #rew_airTime *= torch.norm(self.commands, dim=1) > 0.1 #no reward for zero command
         self.feet_air_time *= ~contact
