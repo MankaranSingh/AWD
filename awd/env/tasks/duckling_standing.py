@@ -15,7 +15,7 @@ class DucklingStanding(DucklingAMPTask):
         self.rew_scales = {
             "lin_tracking": cfg["env"]['learn']["linTrackingRewardScale"],
             "ang_tracking": cfg["env"]['learn']["angTrackingRewardScale"],
-            "action_rate": cfg["env"]["learn"]["actionRateRewardScale"] * self.dt, # TODO: check if this is correct
+            "action_rate": cfg["env"]["learn"]["actionRateRewardScale"] * self.control_dt, # TODO: check if this is correct
             "lin_vel_penalize": cfg["env"]["learn"]["linVelPenalizeScale"],
             "ang_vel_penalize": cfg["env"]["learn"]["angVelPenalizeScale"], 
         }
@@ -24,8 +24,8 @@ class DucklingStanding(DucklingAMPTask):
         self.target_root_states = self._initial_duckling_root_states.clone()
 
         # Command change steps
-        self._command_change_steps_min = cfg["env"]["commandChangeStepsMin"]
-        self._command_change_steps_max = cfg["env"]["commandChangeStepsMax"]
+        self._command_change_steps_min = int(cfg["env"]["commandChangeStepsMin"] / self.control_dt)
+        self._command_change_steps_max = int(cfg["env"]["commandChangeStepsMax"] / self.control_dt)
         self._command_change_steps = torch.zeros(self.num_envs, device=self.device, dtype=torch.int64)
 
     def _compute_reward(self, actions):

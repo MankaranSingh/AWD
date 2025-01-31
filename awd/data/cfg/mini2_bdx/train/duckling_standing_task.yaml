@@ -24,8 +24,8 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [512, 256]
-      activation: relu
+      units: [1024, 512, 256]
+      activation: elu
       d2rl: False
 
       initializer:
@@ -33,7 +33,7 @@ params:
       regularizer:
         name: None
     disc:
-      units: [2, 2]
+      units: [1024, 512, 256]
       activation: relu
 
       initializer:
@@ -88,5 +88,5 @@ params:
     normalize_amp_input: True
     enable_eps_greedy: False
 
-    task_reward_w: 1.0
-    disc_reward_w: 0.0
+    task_reward_w: 0.5
+    disc_reward_w: 0.5

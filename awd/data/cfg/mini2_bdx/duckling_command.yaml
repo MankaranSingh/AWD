@@ -13,11 +13,11 @@ env:
   hybridInitProb: 0.5
   numAMPObsSteps: 20
 
-  pushRobots: False
+  pushRobots: True
   pushStep: 3 #s
   pushStepRandomRange: 1 #s | push works at pushStep +- pushStepRandomRange
   continousPushSteps: 10
-  maxPushVelXy: 0.2 # m/s
+  maxPushVelXy: 0.8 # m/s
 
   # COM is randomized only once for each actor, but not at each reset
   randomizeCom: False
