@@ -2,7 +2,7 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 20 #s
+  episodeLength: 10 #s
   isFlagrun: False
   enableDebugVis: False
   
@@ -13,7 +13,7 @@ env:
   hybridInitProb: 0.5
   numAMPObsSteps: 15
 
-  pushRobots: True
+  pushRobots: False
   pushStep: 3 #s
   pushStepRandomRange: 1 #s | push works at pushStep +- pushStepRandomRange
   continousPushSteps: 10
@@ -37,14 +37,14 @@ env:
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
-  commandChangeStepsMin: 7 #s
-  commandChangeStepsMax: 8 #s
+  commandChangeStepsMin: 70 #s
+  commandChangeStepsMax: 80 #s
   period: 0.66 #s
 
-  actionHistoryInputs: 50
-  actionHistoryInputsDecimation: 2
-  obsHistoryInputs: 50
-  obsHistoryInputsDecimation: 2
+  actionHistoryInputs: 10
+  actionHistoryInputsDecimation: 1
+  obsHistoryInputs: 10
+  obsHistoryInputsDecimation: 1
 
   asset:
     assetRoot: "awd/data/assets"
@@ -78,7 +78,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.3, 0.45] # min max [m/s]
     linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.8, 0.8]          # min max [rad/s]
+    yaw: [-0.1, 0.1]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
