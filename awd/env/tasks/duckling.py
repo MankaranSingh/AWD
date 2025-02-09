@@ -190,6 +190,17 @@ class Duckling(BaseTask):
         self.velocities_history = torch.zeros(self.num_envs, 6 * self.num_steps_per_period, dtype=torch.float, device=self.device, requires_grad=False)
         self.avg_velocities = torch.zeros(self.num_envs, 6, dtype=torch.float, device=self.device, requires_grad=False)
 
+        self._num_action_history_inputs = self.cfg["env"].get("actionHistoryInputs", 1)
+        self._action_history_inputs_decimation = self.cfg["env"].get("actionHistoryInputsDecimation", 1)
+        self.action_history = torch.zeros(self.num_envs, (self.num_actions), self._num_action_history_inputs//self._action_history_inputs_decimation, 
+                                          dtype=torch.float, device=self.device, requires_grad=False)
+
+        self._num_obs_history_inputs = self.cfg["env"].get("obsHistoryInputs", 1)
+        self._obs_history_inputs_decimation = self.cfg["env"].get("obsHistoryInputsDecimation", 1)
+        self.obs_history = torch.zeros(self.num_envs, (self.get_obs_size()//self._num_obs_history_inputs), self._num_obs_history_inputs//self._obs_history_inputs_decimation, 
+                                          dtype=torch.float, device=self.device, requires_grad=False)
+
+
         self.gravity_vec = to_torch(
             get_axis_params(-1.0, self.up_axis_idx), device=self.device
         ).repeat((self.num_envs, 1))
@@ -299,6 +310,7 @@ class Duckling(BaseTask):
         self.last_actions[env_ids] = 0.
         self.actions[env_ids] = 0.
         self.avg_velocities[env_ids] = 0.
+        self.action_history[env_ids] = 0.
         if self._push_robots_flag:
             self._push_step[env_ids] = torch.randint(self._push_step_interval-self._push_step_range, self._push_step_interval+self._push_step_range, (len(env_ids),), device=self.device)
             self._push_vels = torch_rand_float(-self.max_push_vel, self.max_push_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
@@ -650,8 +662,12 @@ class Duckling(BaseTask):
     def _compute_observations(self, env_ids=None):
         obs = self._compute_duckling_obs(env_ids)
 
+        if self.common_step_counter % self._obs_history_inputs_decimation == 0:
+            self.obs_history[:,:,1:] = self.obs_history[:,:,:-1].clone()
+            self.obs_history[:,:,0] = obs.clone()
+
         if (env_ids is None):
-            self.obs_buf[:] = obs
+            self.obs_buf[:] = self.obs_history
         else:
             self.obs_buf[env_ids] = obs
 
@@ -684,7 +700,7 @@ class Duckling(BaseTask):
                                                 dof_pos, dof_vel, key_body_pos,
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
-                                                projected_gravity, foot_contacts, self.actions, self.last_actions)
+                                                projected_gravity, foot_contacts, self.action_history.flatten(1))
         else:
             key_body_pos = self._rigid_body_pos[:, self._key_body_ids, :]
             obs = compute_duckling_observations(self._rigid_body_pos[env_ids][:, 0, :],
@@ -694,7 +710,7 @@ class Duckling(BaseTask):
                                                 dof_pos[env_ids], dof_vel[env_ids], key_body_pos[env_ids],
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
-                                                projected_gravity[env_ids], foot_contacts[env_ids], self.actions[env_ids], self.last_actions[env_ids])        
+                                                projected_gravity[env_ids], foot_contacts[env_ids], self.action_history[env_ids].flatten(1))        
 
         if self.add_obs_noise:
             obs += (2 * torch.rand_like(obs) - 1) * self.obs_noise_vec
@@ -710,6 +726,15 @@ class Duckling(BaseTask):
     def pre_physics_step(self, actions):
         self.actions = actions.to(self.device).clone()
         action_delayed = self.update_action_latency_buffer()
+    
+        if self.common_step_counter % self._action_history_inputs_decimation == 0:
+            self.action_history[:,:,1:] = self.action_history[:,:,:-1].clone()
+            self.action_history[:,:,0] = action_delayed.clone()
+        
+        if self.common_step_counter % self._obs_history_inputs_decimation == 0:
+            self.obs_history[:,:,1:] = self.obs_history[:,:,:-1].clone()
+            self.obs_history[:,:,0] = obs_delayed.clone()
+
         self.render()
         for _ in range(self.control_freq_inv):
             # control strategy
@@ -757,15 +782,12 @@ class Duckling(BaseTask):
         # Computing average velocities over the last gait
         # Shift back.
         self.velocities_history[:, : 6 * (self.num_steps_per_period - 1)] = self.velocities_history[:, 6 : 6 * self.num_steps_per_period]
-
         # add
         self.velocities_history[:, -6:] = self._duckling_root_states[:, 7:13]
-
         # reshape velocities_history so that its (num_envs, num_steps_per_period, 6)
         self.velocities_history_reshaped = self.velocities_history.view(
             self.num_envs, self.num_steps_per_period, 6
         )
-
         # Compute average velocities for each environment
         self.avg_velocities = torch.mean(self.velocities_history_reshaped, dim=1)
 
@@ -969,10 +991,9 @@ def compute_duckling_observations(
     dof_axis,
     projected_gravity,
     foot_contacts,
-    actions,
-    last_actions,
+    actions_history,
 ):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor, Tensor, Tensor) -> Tensor
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor, Tensor) -> Tensor
     # realistic observations
 
     # heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
@@ -989,8 +1010,7 @@ def compute_duckling_observations(
             # local_root_ang_vel,
             # local_root_obs,
             # root_height_obs,
-            actions,
-            # last_actions,
+            actions_history,
         ),
         dim=-1,
     )
