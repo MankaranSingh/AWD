@@ -924,7 +924,7 @@ class Duckling(BaseTask):
         return
 
     def _get_obs_noise_scale_vec(self, noise_cfg):
-        noise_vec = torch.zeros(self.get_obs_size_per_step()-self.get_task_obs_size(), device=self.device)
+        noise_vec = torch.zeros(self.get_obs_size_per_step(), device=self.device)
         idx = 0
         noise_vec[idx:idx+3] = noise_cfg["gravity_noise"]
         idx += 3
