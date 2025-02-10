@@ -62,7 +62,6 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.dof_pos = self._dof_pos
         self.dof_vel = self._dof_vel
         self.contact_forces = self._contact_forces
-        self.torques = self.dof_force_tensor
 
         self.commands = torch.zeros(self.num_envs, 3, dtype=torch.float, device=self.device, requires_grad=False)
         self.commands_y = self.commands.view(self.num_envs, 3)[..., 1]

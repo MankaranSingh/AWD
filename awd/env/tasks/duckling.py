@@ -188,7 +188,8 @@ class Duckling(BaseTask):
                 self._mask_joint_values = torch_rand_float(self._mask_joint_random_range[0], self._mask_joint_random_range[1], (self.num_envs, len(self._mask_joint_ids)), device=self.device).squeeze()
             else:
                 self._mask_joint_values = torch.zeros(self.num_envs, len(self._mask_joint_ids), device=self.device)
-                
+        
+        self.torques = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
         self.last_contacts = torch.zeros(self.num_envs, len(self._key_body_ids), dtype=torch.bool, device=self.device, requires_grad=False)
         self.feet_air_time = torch.zeros(self.num_envs, self._key_body_ids.shape[0], dtype=torch.float, device=self.device, requires_grad=False)
         self.actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
@@ -314,6 +315,7 @@ class Duckling(BaseTask):
         self.actions[env_ids] = 0.
         self.avg_velocities[env_ids] = 0.
         self.action_history[env_ids] = 0.
+        self.obs_history[env_ids] = 0.
         if self._push_robots_flag:
             self._push_step[env_ids] = torch.randint(self._push_step_interval-self._push_step_range, self._push_step_interval+self._push_step_range, (len(env_ids),), device=self.device)
             self._push_vels = torch_rand_float(-self.max_push_vel, self.max_push_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
