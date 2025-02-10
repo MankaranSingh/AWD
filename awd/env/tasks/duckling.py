@@ -934,6 +934,8 @@ class Duckling(BaseTask):
         idx += self.num_dof
         noise_vec[idx:idx+self.num_dof] = noise_cfg["dof_vel_noise"]
         idx += self.num_dof
+        noise_vec[idx:idx+3] = noise_cfg["ang_vel_noise"]
+        idx += 3
 
         return noise_vec
 
@@ -999,9 +1001,9 @@ def compute_duckling_observations(
     # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool, bool, int, List[int], List[int], Tensor, Tensor) -> Tensor
     # realistic observations
 
-    # heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
+    heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
     # local_root_vel = quat_rotate(heading_rot, root_vel)
-    # local_root_ang_vel = quat_rotate(heading_rot, root_ang_vel)
+    local_root_ang_vel = quat_rotate(heading_rot, root_ang_vel)
     
     obs = torch.cat(
         (
@@ -1010,7 +1012,7 @@ def compute_duckling_observations(
             dof_vel,
             foot_contacts,
             # local_root_vel,
-            # local_root_ang_vel,
+            local_root_ang_vel,
             # local_root_obs,
             # root_height_obs,
         ),
