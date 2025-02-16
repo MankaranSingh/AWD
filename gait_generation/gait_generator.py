@@ -201,7 +201,7 @@ while True:
         root_position = list(T_world_fbase[:3, 3])
         #if center_y_pos is None:
         #    center_y_pos = root_position[1]
-        root_position[1] = root_position[1] - center_y_pos
+        root_position[1] = root_position[1]
         if round(root_position[2],5) < 0:
             print(f"BAD root_position: {root_position[2]:.5f}")
         root_orientation_quat = list(R.from_matrix(T_world_fbase[:3, :3]).as_quat())
