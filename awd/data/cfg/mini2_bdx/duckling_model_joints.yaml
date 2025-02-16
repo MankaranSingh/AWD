@@ -33,7 +33,7 @@ env:
   enableTaskObs: True
   randomizeMaskJoints: False
 
-  waveTypes: ["gaussian"]
+  waveTypes: ["sine", "square", "gaussian"]
   sine_params: 
     amplitudes: [10, 20, 30, 40] # deg
     frequencies: [2, 5, 4, 6] # Hz

@@ -57,6 +57,10 @@ class DucklingModelJoints(DucklingAMP):
                          device_type=device_type,
                          device_id=device_id,
                          headless=headless)
+    
+        self._initial_dof_pos = torch.zeros_like(
+            self._dof_pos, device=self.device, dtype=torch.float
+        )
         
         self.position_targets = []
         self.actual_positions = []
