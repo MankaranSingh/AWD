@@ -55,6 +55,7 @@ class Duckling(BaseTask):
         self.custom_origins = False
         self.init_done = False
         self.curriculum = self.cfg["env"]["terrain"]["curriculum"]
+        self.dof_names = []
 
         self._pd_control = self.cfg["env"]["pdControl"]
         self.custom_control = self.cfg["env"].get("customControl", False)
@@ -568,7 +569,7 @@ class Duckling(BaseTask):
         # for j in range(self.num_bodies):
         #     self.gym.set_rigid_body_color(env_ptr, duckling_handle, j, gymapi.MESH_VISUAL, gymapi.Vec3(0.54, 0.85, 0.2))
 
-        dof_names = self.gym.get_asset_dof_names(duckling_asset)
+        self.dof_names = self.gym.get_asset_dof_names(duckling_asset)
         dof_prop = self.gym.get_asset_dof_properties(duckling_asset)
         if self.custom_control or (not self._pd_control):
             dof_prop["driveMode"] = gymapi.DOF_MODE_EFFORT
@@ -579,7 +580,7 @@ class Duckling(BaseTask):
             dof_prop["driveMode"] = gymapi.DOF_MODE_POS
             props_to_set = ["stiffness", "damping", "friction", "armature", "velocity", "effort"]
 
-        for i, dof_name in enumerate(dof_names):
+        for i, dof_name in enumerate(self.dof_names):
             if dof_name not in self._dof_props_config:
                 continue
             for prop_type in props_to_set:

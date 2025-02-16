@@ -24,17 +24,16 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [1024, 512]
-      activation: relu
+      units: [128, 128]
+      activation: elu
       d2rl: False
 
       initializer:
         name: default
       regularizer:
         name: None
-
     disc:
-      units: [1024, 512]
+      units: [1, 1]
       activation: relu
 
       initializer:
@@ -47,7 +46,7 @@ params:
     env_name: rlgpu
     multi_gpu: False
     ppo: True
-    mixed_precision: False
+    mixed_precision: True
     normalize_input: True
     normalize_value: True
     reward_shaper:
@@ -55,15 +54,17 @@ params:
     normalize_advantage: True
     gamma: 0.99
     tau: 0.95
-    learning_rate: 2e-5
-    lr_schedule: constant
+    learning_rate: 4e-5 # overwritten if adaptive lr_schedule
+    lr_schedule: adaptive # constant
+    kl_threshold: 0.008 # target kl for adaptive lr
     score_to_win: 20000
-    max_epochs: 10000
+    max_epochs: 100000
     save_best_after: 50
     save_frequency: 50
-    print_stats: False
+    save_intermediate: True
+    print_stats: True
     grad_norm: 1.0
-    entropy_coef: 0.0
+    entropy_coef: 0.001
     truncate_grads: False
     ppo: True
     e_clip: 0.2
@@ -77,15 +78,15 @@ params:
     amp_obs_demo_buffer_size: 200000
     amp_replay_buffer_size: 200000
     amp_replay_keep_prob: 0.01
-    # amp_batch_size: 512
-    # amp_minibatch_size: 4096
+    amp_batch_size: 1024
+    amp_minibatch_size: 4096
     disc_coef: 5
     disc_logit_reg: 0.01
     disc_grad_penalty: 5
-    disc_reward_scale: 2
-    disc_weight_decay: 0.0001
+    disc_reward_scale: 2.0
+    disc_weight_decay: 0.00000
     normalize_amp_input: True
     enable_eps_greedy: False
 
-    task_reward_w: 0.0
-    disc_reward_w: 1.0
+    task_reward_w: 1.0
+    disc_reward_w: 0.0

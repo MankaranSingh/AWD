@@ -38,6 +38,7 @@ from env.tasks.duckling_standing import DucklingStanding
 from env.tasks.duckling_perturb import DucklingPerturb
 from env.tasks.duckling_view_motion import DucklingViewMotion
 from env.tasks.duckling_model_joints import DucklingModelJoints
+from env.tasks.duckling_uan import DucklingUAN
 from env.tasks.vec_task_wrappers import VecTaskPythonWrapper
 
 from isaacgym import rlgpu

@@ -6,7 +6,7 @@ env:
   isFlagrun: False
   enableDebugVis: False
   
-  pdControl: True
+  pdControl: False
   powerScale: 1.0
   controlFrequencyInv: 4 # 50 Hz
   stateInit: "Hybrid"
@@ -25,10 +25,10 @@ env:
   randomizeTorques: False
   torqueMultiplierRange: [0.85, 1.15]
 
-  customControl: False
+  customControl: True
 
   localRootObs: True
-  keyBodies: ["left_foot", "right_foot"]
+  keyBodies: 2["left_foot", "right_foot"]
   contactBodies: ["foot_assembly", "foot_assembly_2"]
   maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw', "head_roll", "left_antenna", "right_antenna"]
   maskJointRandomRange: [-0.5, 0.5]
@@ -135,13 +135,13 @@ task:
     ang_vel_noise: 0.2
     gravity_noise: 0.05
   
-  add_obs_latency: True
+  add_obs_latency: False
   randomize_obs_motor_latency: False
   range_obs_motor_latency: [5, 10] # ms
-  randomize_obs_imu_latency: True
+  randomize_obs_imu_latency: False
   range_obs_imu_latency: [5, 10] #ms
   
-  add_action_latency: True
+  add_action_latency: False
   randomize_action_latency: False
   range_action_latency: [5, 5] #ms
   

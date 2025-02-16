@@ -7,7 +7,7 @@ env:
   enableDebugVis: False
   fixBaseLink: True
   
-  pdControl: True
+  pdControl: False
   powerScale: 1.0
   controlFrequencyInv: 4 # 50 Hz
   stateInit: "Hybrid"
@@ -20,7 +20,7 @@ env:
   randomizeTorques: False
   torqueMultiplierRange: [0.85, 1.15]
 
-  customControl: False
+  customControl: True
 
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
@@ -35,17 +35,21 @@ env:
 
   waveTypes: ["sine", "square", "gaussian"]
   sine_params: 
-    amplitudes: [10, 20, 30, 40] # deg
-    frequencies: [2, 5, 4, 6] # Hz
+    amplitudes: [10, 5, 15, 20] # deg
+    frequencies: [2, 5, 1.5, 1] # Hz
   square_params:  
-    amplitudes: [10, 20, 30, 40] # deg
-    frequencies: [2, 5, 4, 6] # Hz
+    amplitudes: [10, 5, 15, 20] # deg
+    frequencies: [2, 5, 1.5, 1] # Hz
   gaussian_params:  
     mean: [0, 5, 5, -5] # deg
     std: [10, 20, 30, 40] # deg
     new_sample_s: [0.4, 0.2, 0.5, 0.6] # s
+
+  uan_history_steps: 20
+  target_dof: 0
     
   asset:
+    uanDataRoot: "output/UAN_data"
     assetRoot: "awd/data/assets"
     assetFileName: "mini2_bdx/mini2_bdx.urdf"
 

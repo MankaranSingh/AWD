@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import time
+import os
 from isaacgym.torch_utils import *
 
 from isaacgym import gymtorch
@@ -59,6 +60,9 @@ class DucklingModelJoints(DucklingAMP):
                          headless=headless)
     
         self._initial_dof_pos = torch.zeros_like(
+            self._dof_pos, device=self.device, dtype=torch.float
+        )
+        self._default_dof_pos = torch.zeros_like(
             self._dof_pos, device=self.device, dtype=torch.float
         )
         
@@ -136,9 +140,9 @@ class DucklingModelJoints(DucklingAMP):
             if self.cfg["task"]["add_obs_latency"]:
                 self.update_obs_latency_buffer()
 
-            self.position_targets.append(actions.clone().detach().cpu().numpy())
-            self.actual_positions.append(self._dof_pos.clone().detach().cpu().numpy())
-            self.actual_velocities.append(self._dof_vel.clone().detach().cpu().numpy())
+            self.position_targets.append(actions[:, self.current_dof].detach().cpu().numpy())
+            self.actual_positions.append(self._dof_pos[:, self.current_dof].detach().cpu().numpy())
+            self.actual_velocities.append(self._dof_vel[:, self.current_dof].detach().cpu().numpy())
         return
 
 
@@ -152,11 +156,23 @@ class DucklingModelJoints(DucklingAMP):
     def _compute_reset(self):
         self.reset_buf[:] = self.progress_buf > self.max_episode_length
         return
+    
+    def _save_data(self):
+        save_dir = "output/UAN_data"
+        os.makedirs(save_dir, exist_ok=True)
+        data = {
+            "position_targets": np.array(self.position_targets),
+            "actual_positions": np.array(self.actual_positions),
+            "actual_velocities": np.array(self.actual_velocities)
+        }
+        np.save(save_dir + f"/{self.dof_names[self.current_dof]}_{self.current_wave}.npy", data)
+        return
 
     def _reset_env_tensors(self, env_ids):       
         super()._reset_env_tensors(env_ids) 
-        self.common_step_counter = 0
         self.phase = -self.control_freq_inv
+
+        self._save_data()
 
         self.position_targets = []
         self.actual_positions = []
