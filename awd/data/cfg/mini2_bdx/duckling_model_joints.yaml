@@ -2,22 +2,17 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 10 #s
+  episodeLength: 5 #s
   isFlagrun: False
   enableDebugVis: False
+  fixBaseLink: True
   
   pdControl: True
   powerScale: 1.0
   controlFrequencyInv: 4 # 50 Hz
   stateInit: "Hybrid"
-  hybridInitProb: 1.0
-  numAMPObsSteps: 15
-
-  pushRobots: True
-  pushStep: 3 #s
-  pushStepRandomRange: 1 #s | push works at pushStep +- pushStepRandomRange
-  continousPushSteps: 5
-  maxPushVelXy: 0.3 # m/s
+  hybridInitProb: 0.0
+  numAMPObsSteps: 2
 
   # COM is randomized only once for each actor, but not at each reset
   randomizeCom: False
@@ -30,22 +25,26 @@ env:
   localRootObs: True
   keyBodies: ["left_foot", "right_foot"]
   contactBodies: ["foot_assembly", "foot_assembly_2"]
-  maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw', "head_roll", "left_antenna", "right_antenna"]
+  maskJoints: [] #['neck_pitch', 'head_pitch', 'head_yaw', "head_roll", "left_antenna", "right_antenna"]
   maskJointRandomRange: [-0.5, 0.5]
   terminationHeight: -0.05
-  initHeight: 0.17
+  initHeight: 1.0
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
-  commandChangeStepsMin: 50 #s
-  commandChangeStepsMax: 60 #s
-  period: 0.43 #s
 
-  actionHistoryInputs: 10
-  actionHistoryInputsDecimation: 1
-  obsHistoryInputs: 10
-  obsHistoryInputsDecimation: 1
-
+  waveTypes: ["sine", "sqaure", "gaussian"]
+  sine_params: 
+    amplitudes: [10, 20, 30, 40]
+    frequencies: [0.5, 0.1, 0.5, 0.7]
+  square_params:  
+    amplitudes: [10, 20, 30, 40]
+    frequencies: [0.2, 0.5, 0.7, 1]
+  gaussian_params:  
+    mean: [0, 20,30, 10]
+    std: [1, 5, 2, 3]
+    frequencies: [0.4, 0.2, 0.5, 0.6]
+    
   asset:
     assetRoot: "awd/data/assets"
     assetFileName: "mini2_bdx/mini2_bdx.urdf"
@@ -54,31 +53,6 @@ env:
     staticFriction: 1.0
     dynamicFriction: 1.0
     restitution: 0.0
-
-  learn:
-    # rewards
-    linearVelocityXYRewardScale: [1.0, 1.0]
-    angularVelocityZRewardScale: 1.0
-    torqueRewardScale: -0.000
-    feetAirTimeRewardScale: 0.05
-    actionRateRewardScale: -0.001
-    standStillRewardScale: -0.0
-    footSlideRewardScale: -0.0005
-
-    # normalization
-    linearVelocityScale: [2.0, 2.0]
-    angularVelocityScale: 0.25
-    useAverageVelocities: True
-
-  # randomCommandVelocityRanges:
-  #   linear_x: [0, 0.] # min max [m/s]
-  #   linear_y: [0, 0.]   # min max [m/s]
-  #   yaw: [0., 0.]          # min max [rad/s]
-
-  randomCommandVelocityRanges:
-    linear_x: [-0.2, 0.45] # min max [m/s]
-    linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.8, 0.8]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
@@ -135,13 +109,13 @@ task:
     ang_vel_noise: 0.2
     gravity_noise: 0.05
   
-  add_obs_latency: True
+  add_obs_latency: False
   randomize_obs_motor_latency: False
   range_obs_motor_latency: [5, 10] # ms
-  randomize_obs_imu_latency: True
+  randomize_obs_imu_latency: False
   range_obs_imu_latency: [5, 10] #ms
   
-  add_action_latency: True
+  add_action_latency: False
   randomize_action_latency: False
   range_action_latency: [5, 5] #ms
   

@@ -452,7 +452,7 @@ class Duckling(BaseTask):
         asset_options.max_linear_velocity = 100.0
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         asset_options.default_dof_drive_mode = 0
-        #asset_options.fix_base_link = True
+        asset_options.fix_base_link = self.cfg["env"].get("fixBaseLink", False)
         motor_efforts = None
         duckling_asset = self.gym.load_asset(self.sim, asset_root, asset_file, asset_options)
         props = self._get_asset_properties()
@@ -717,14 +717,40 @@ class Duckling(BaseTask):
             obs += (2 * torch.rand_like(obs) - 1) * self.obs_noise_vec
 
         if env_ids is None:
+            mask_envs = self.progress_buf == 0
+            mask_envs_ids = mask_envs.nonzero(as_tuple=False).flatten()
+            self.obs_history[mask_envs_ids, :, :] = obs[mask_envs_ids].unsqueeze(-1).clone()
+
             self.obs_history[:,:,1:] = self.obs_history[:,:,:-1].clone()
             self.obs_history[:,:,0] = obs 
-            return torch.cat((self.obs_history.flatten(1), self.action_history.flatten(1)), dim=-1)    
+
+            obs_history = self.obs_history.permute(0, 2, 1) 
+            action_history = self.action_history.permute(0, 2, 1) 
+
+            # Step 2: For each timestep, concatenate observation and action
+            combined = torch.cat((obs_history, action_history), dim=-1) 
+
+            # Step 3: Flatten the last two dimensions to get a 2D tensor for the MLP
+            flattened = combined.reshape(self.num_envs, -1) 
+            return flattened  
         else:
+            mask_envs = self.progress_buf[env_ids] == 0
+            mask_envs_ids = mask_envs.nonzero(as_tuple=False).flatten()
+            self.obs_history[env_ids][mask_envs_ids, :, :] = obs[mask_envs_ids].unsqueeze(-1).clone()
+
             self.obs_history[env_ids,:,1:] = self.obs_history[env_ids,:,:-1].clone()
             self.obs_history[env_ids,:,0] = obs
-            return torch.cat((self.obs_history[env_ids].flatten(1), self.action_history[env_ids].flatten(1)), dim=-1)    
 
+            obs_history = self.obs_history.permute(0, 2, 1) 
+            action_history = self.action_history.permute(0, 2, 1) 
+
+            # Step 2: For each timestep, concatenate observation and action
+            combined = torch.cat((obs_history, action_history), dim=-1) 
+
+            # Step 3: Flatten the last two dimensions to get a 2D tensor for the MLP
+            flattened = combined.reshape(self.num_envs, -1)
+            return flattened[env_ids]
+        
     def _reset_actors(self, env_ids):
         self._duckling_root_states[env_ids] = self._initial_duckling_root_states[env_ids]
         self._dof_pos[env_ids] = self._initial_dof_pos[env_ids]
@@ -772,6 +798,7 @@ class Duckling(BaseTask):
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
+            self.gym.refresh_actor_root_state_tensor(self.sim)
             self.projected_gravity = quat_rotate_inverse(self._duckling_root_states[:, 3:7], self.gravity_vec) # update imu at simulation freq.
 
             if self.cfg["task"]["add_obs_latency"]:
@@ -974,7 +1001,6 @@ class Duckling(BaseTask):
         return action_delayed
 
     def update_obs_latency_buffer(self):
-        self.gym.refresh_actor_root_state_tensor(self.sim)
         self.obs_motor_latency_buffer[:,:,1:] = self.obs_motor_latency_buffer[:,:,:int(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt))].clone()
         self.obs_motor_latency_buffer[:,:,0] = torch.cat((self._dof_pos, self._dof_vel), 1).clone()
         self.obs_imu_latency_buffer[:,:,1:] = self.obs_imu_latency_buffer[:,:,:int(self.cfg["task"]["range_obs_imu_latency"][1]/(1000*self.sim_dt))].clone()
