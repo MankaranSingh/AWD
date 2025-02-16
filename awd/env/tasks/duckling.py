@@ -140,7 +140,7 @@ class Duckling(BaseTask):
         self._default_dof_pos = torch.zeros_like(
             self._dof_pos, device=self.device, dtype=torch.float
         )
-
+        
         for i, joint_name in enumerate(self._joints):
             self._default_dof_pos[:, i] = self._dof_props_config[joint_name].get("init_pos", 0.0)
         
@@ -812,7 +812,7 @@ class Duckling(BaseTask):
 
         # Computing average velocities over the last gait
         # Shift back.
-        self.velocities_history[:, : 6 * (self.num_steps_per_period - 1)] = self.velocities_history[:, 6 : 6 * self.num_steps_per_period]
+        self.velocities_history[:, : 6 * (self.num_steps_per_period - 1)] = self.velocities_history[:, 6 : 6 * self.num_steps_per_period].clone()
         # add
         self.velocities_history[:, -6:] = self._duckling_root_states[:, 7:13]
         # reshape velocities_history so that its (num_envs, num_steps_per_period, 6)

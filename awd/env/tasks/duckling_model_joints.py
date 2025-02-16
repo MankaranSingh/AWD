@@ -19,13 +19,13 @@ def square_wave(frequency=1, amplitude=45, duration=5, dt=0.01, degrees=False):
         amplitude = amplitude * np.pi / 180  # convert degrees to radians
     return t, amplitude * np.sign(np.sin(2 * np.pi * frequency * t))
 
-def gaussian_noise(frequency=0.4, mean=0, std_dev=15, duration=5, dt=0.01, degrees=False):
+def gaussian_noise(new_sample_s=0.4, mean=0, std_dev=15, duration=5, dt=0.01, degrees=False):
     """
     Generates a piecewise constant Gaussian noise signal.
     The noise value is updated every 'frequency' seconds.
     
     Parameters:
-        frequency: update interval in seconds (e.g., frequency=0.4 means update every 0.4 sec)
+        new_sample_s: update interval in seconds (e.g., new_sample_s=0.4 means update every 0.4 sec)
         mean: mean value (in degrees if degrees=True, otherwise in radians)
         std_dev: standard deviation (in degrees if degrees=True, otherwise in radians)
         duration: total duration of the signal in seconds
@@ -38,11 +38,11 @@ def gaussian_noise(frequency=0.4, mean=0, std_dev=15, duration=5, dt=0.01, degre
         std_dev = std_dev * np.pi / 180
     
     y = np.zeros_like(t)
-    last_update_time = -frequency  # ensures update at t=0
+    last_update_time = -new_sample_s  # ensures update at t=0
     noise_value = np.clip(np.random.normal(mean, std_dev), -std_dev, std_dev)
     
     for i, time in enumerate(t):
-        if time - last_update_time >= frequency:
+        if time - last_update_time >= new_sample_s:
             noise_value = np.clip(np.random.normal(mean, std_dev), -std_dev, std_dev)
             last_update_time = time
         y[i] = noise_value
@@ -78,7 +78,7 @@ class DucklingModelJoints(DucklingAMP):
                 _, wave = square_wave(freq, amplitude, self.max_episode_length_s, self.sim_dt, degrees=True)
                 self.waves.append(wave)
         if "gaussian" in self.wave_types:
-            for freq, mean, std in zip(gaussian_params["frequencies"], gaussian_params["mean"], gaussian_params["std"]):
+            for freq, mean, std in zip(gaussian_params["new_sample_s"], gaussian_params["mean"], gaussian_params["std"]):
                 _, wave = gaussian_noise(freq, mean, std, self.max_episode_length_s, self.sim_dt, degrees=True)
                 self.waves.append(wave)
 

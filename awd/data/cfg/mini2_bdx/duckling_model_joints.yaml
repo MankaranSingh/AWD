@@ -33,17 +33,17 @@ env:
   enableTaskObs: True
   randomizeMaskJoints: False
 
-  waveTypes: ["sine", "sqaure", "gaussian"]
+  waveTypes: ["gaussian"]
   sine_params: 
-    amplitudes: [10, 20, 30, 40]
-    frequencies: [0.5, 0.1, 0.5, 0.7]
+    amplitudes: [10, 20, 30, 40] # deg
+    frequencies: [2, 5, 4, 6] # Hz
   square_params:  
-    amplitudes: [10, 20, 30, 40]
-    frequencies: [0.2, 0.5, 0.7, 1]
+    amplitudes: [10, 20, 30, 40] # deg
+    frequencies: [2, 5, 4, 6] # Hz
   gaussian_params:  
-    mean: [0, 20,30, 10]
-    std: [1, 5, 2, 3]
-    frequencies: [0.4, 0.2, 0.5, 0.6]
+    mean: [0, 5, 5, -5] # deg
+    std: [10, 20, 30, 40] # deg
+    new_sample_s: [0.4, 0.2, 0.5, 0.6] # s
     
   asset:
     assetRoot: "awd/data/assets"
