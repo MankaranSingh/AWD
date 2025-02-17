@@ -18,14 +18,17 @@ class DucklingUAN(DucklingAMP):
                          device_type=device_type,
                          device_id=device_id,
                          headless=headless)
-    
+
+        self.episode_reward_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
+                                    for name in ["r_sim_to_real", "r_smoothness"]}
+        self.extras["episode"] = {}
+
         self._initial_dof_pos = torch.zeros_like(
             self._dof_pos, device=self.device, dtype=torch.float
         )
         self._default_dof_pos = torch.zeros_like(
             self._dof_pos, device=self.device, dtype=torch.float
         )
-
         
         self.trajectory_size = int(self.max_episode_length_s/self.sim_dt)
         self.reference_positions = torch.zeros((self.num_envs, self.trajectory_size), device=self.device, dtype=torch.float)
@@ -57,6 +60,7 @@ class DucklingUAN(DucklingAMP):
         return 2*self.uan_history_steps
 
     def pre_physics_step(self, actions):
+        self.actions = actions.clone()
         self.corrective_torque = actions
     
         self.render()
@@ -72,7 +76,7 @@ class DucklingUAN(DucklingAMP):
                 self.torques = self.p_gains*(self.target_positions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
                 if self.randomize_torques:
                     self.torques *= self.randomize_torques_factors
-                self.torques += self.corrective_torque
+                self.torques[:, self.target_dof] += self.corrective_torque.squeeze(1)
                 self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
                 self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
             elif (self._pd_control): # isaac based position contol
@@ -123,8 +127,11 @@ class DucklingUAN(DucklingAMP):
         return
     
     def _compute_reward(self, actions):
-        self.rew_buf[:] = 1
-    
+        r_sim_to_real, r_smoothness = uan_reward(self.real_positions[:, self.target_dof], self._dof_pos[:, self.target_dof], self.last_actions.squeeze(1), self.actions.squeeze(1))
+        self.rew_buf[:] = r_sim_to_real + r_smoothness
+        self.episode_reward_sums["r_sim_to_real"] += r_sim_to_real
+        self.episode_reward_sums["r_smoothness"] += r_smoothness 
+
     def _reset_env_tensors(self, env_ids):       
         super()._reset_env_tensors(env_ids) 
         self.phase = 0
@@ -139,4 +146,40 @@ class DucklingUAN(DucklingAMP):
             self.reference_velocities[i] = torch.diff(self.reference_positions[i], prepend=self.reference_positions[i, :1]) / self.sim_dt
             self.real_velocities[i] = torch.tensor(waves[i]["actual_velocities"][:self.trajectory_size, 0], device=self.device, dtype=torch.float)
             self.real_positions[i] = torch.tensor(waves[i]["actual_positions"][:self.trajectory_size, 0], device=self.device, dtype=torch.float)
+        
+        for key in self.episode_reward_sums.keys():
+            self.extras["episode"]['rew_' + key] = torch.mean(self.episode_reward_sums[key][env_ids] / (self.progress_buf[env_ids]))
+            self.episode_reward_sums[key][env_ids] = 0.
         return
+
+
+@torch.jit.script
+def uan_reward(q_real, q_sim, prev_action, action):
+    """
+    Compute the reward for the Unsupervised Actuator Net (UAN) using PyTorch.
+
+    Parameters:
+    - q_real: Tensor of shape (num_envs,), real-world joint positions
+    - q_sim: Tensor of shape (num_envs,), simulated joint positions
+    - prev_action: Tensor of shape (num_envs,), corrective torque from the previous timestep
+    - action: Tensor of shape (num_envs,), corrective torque at the current timestep
+
+    Returns:
+    - reward: Tensor of shape (num_envs,), computed reward values
+    """
+    # type: (Tensor, Tensor, Tensor, Tensor) -> Tuple[Tensor, Tensor]
+
+    # Compute position error (L1 norm)
+    error = torch.abs(q_real - q_sim)
+
+    # Sim-to-real matching reward with multi-scale exponentials
+    r_sim_to_real = -1.5 * error \
+                    + 4.0 * torch.exp(-100 * error**2) \
+                    + 4.0 * torch.exp(-300 * error**2) \
+                    + 5.0 * torch.exp(-1000 * error**2)
+
+    # Smoothness reward (penalizing sudden torque changes)
+    r_smoothness = 0.5 * torch.exp(-0.5 * torch.abs(action - prev_action))
+
+    # Total reward
+    return r_sim_to_real, r_smoothness
