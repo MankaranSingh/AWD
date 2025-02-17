@@ -65,6 +65,8 @@ class DucklingModelJoints(DucklingAMP):
         self._default_dof_pos = torch.zeros_like(
             self._dof_pos, device=self.device, dtype=torch.float
         )
+
+        self.trajectory_size = int(self.max_episode_length_s/self.sim_dt)
         
         self.position_targets = []
         self.actual_positions = []
@@ -90,7 +92,7 @@ class DucklingModelJoints(DucklingAMP):
                 _, wave = gaussian_noise(freq, mean, std, self.max_episode_length_s, self.sim_dt, degrees=True)
                 self.waves.append(wave)
 
-        self.phase = -self.control_freq_inv
+        self.phase = 0
         self.current_dof = -1
         self.current_wave = 0
         return
@@ -102,6 +104,7 @@ class DucklingModelJoints(DucklingAMP):
         for _ in range(self.control_freq_inv):
             actions[:, self.current_dof] = self.waves[self.current_wave][self.phase]
             self.phase += 1
+            self.phase = np.clip(self.phase, 0, self.trajectory_size-1)
 
             # control strategy
             if self.custom_control: # custom position control
@@ -170,7 +173,7 @@ class DucklingModelJoints(DucklingAMP):
 
     def _reset_env_tensors(self, env_ids):       
         super()._reset_env_tensors(env_ids) 
-        self.phase = -self.control_freq_inv
+        self.phase = 0
 
         self._save_data()
 

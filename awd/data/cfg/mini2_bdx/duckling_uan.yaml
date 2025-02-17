@@ -9,7 +9,7 @@ env:
   
   pdControl: False
   powerScale: 1.0
-  controlFrequencyInv: 4 # 50 Hz
+  controlFrequencyInv: 1
   stateInit: "Hybrid"
   hybridInitProb: 0.0
   numAMPObsSteps: 2

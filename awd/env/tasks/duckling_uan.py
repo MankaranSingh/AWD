@@ -148,7 +148,7 @@ class DucklingUAN(DucklingAMP):
             self.real_positions[i] = torch.tensor(waves[i]["actual_positions"][:self.trajectory_size, 0], device=self.device, dtype=torch.float)
         
         for key in self.episode_reward_sums.keys():
-            self.extras["episode"]['rew_' + key] = torch.mean(self.episode_reward_sums[key][env_ids] / (self.progress_buf[env_ids]))
+            self.extras["episode"]['rew_' + key] = torch.mean(self.episode_reward_sums[key][env_ids]/self.max_episode_length)
             self.episode_reward_sums[key][env_ids] = 0.
         return
 
