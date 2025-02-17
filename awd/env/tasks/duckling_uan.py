@@ -47,8 +47,9 @@ class DucklingUAN(DucklingAMP):
         self.waves = None
         self.load_uan_data()
         
-        self.save_plots = cfg["env"]["save_plots"]
+        self.validation = cfg["env"]["validation"]
         self.save_num_plots = cfg["env"]["save_num_plots"]
+        self.enable_corrective_torque = cfg["env"]["enable_corrective_torque"]
         return
     
     def load_uan_data(self):
@@ -84,7 +85,8 @@ class DucklingUAN(DucklingAMP):
                 self.torques = self.p_gains*(self.target_positions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
                 if self.randomize_torques:
                     self.torques *= self.randomize_torques_factors
-                self.torques[:, self.target_dof] += self.corrective_torque.squeeze(1)
+                if self.enable_corrective_torque:
+                    self.torques[:, self.target_dof] += self.corrective_torque.squeeze(1)
                 self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
                 self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
             elif (self._pd_control): # isaac based position contol
@@ -146,7 +148,7 @@ class DucklingUAN(DucklingAMP):
     def _reset_env_tensors(self, env_ids):       
         super()._reset_env_tensors(env_ids)
 
-        if self.save_plots:
+        if self.validation and self.common_step_counter > 1:
             save_path = os.path.join(self.cfg["env"]["asset"]["uanDataRoot"], "validation")
             os.makedirs(save_path, exist_ok=True)
             ref_pos, real_pos, pos_hist = self.reference_positions[:self.save_num_plots].cpu().numpy(), \
@@ -157,6 +159,8 @@ class DucklingUAN(DucklingAMP):
                                            real_pos.reshape(self.save_num_plots, 1, -1), 
                                            pos_hist.reshape(self.save_num_plots, 1, -1)], axis=1)
             np.save(os.path.join(save_path, f"validation_{self.target_dof_name}.npy"), concatenated)
+            print("Validation data saved..")
+            exit()
 
         self.phase = 0
         self.pos_vel_errors[:] = 0

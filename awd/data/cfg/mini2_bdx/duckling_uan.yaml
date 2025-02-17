@@ -44,11 +44,12 @@ env:
     mean: [0, 5, 5, -5] # deg
     std: [10, 20, 30, 40] # deg
     new_sample_s: [0.4, 0.2, 0.5, 0.6] # s
-
-  uan_history_steps: 20
+  
+  enable_corrective_torque: True
+  uan_history_steps: 60
   target_dof: 0
 
-  save_plots: False
+  validation: False
   save_num_plots: 10
     
   asset:

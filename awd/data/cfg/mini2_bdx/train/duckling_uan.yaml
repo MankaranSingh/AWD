@@ -24,7 +24,7 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [128, 128]
+      units: [256, 128]
       activation: elu
       d2rl: False
 
@@ -68,9 +68,9 @@ params:
     truncate_grads: False
     ppo: True
     e_clip: 0.2
-    horizon_length: 32
-    minibatch_size: 16384
-    mini_epochs: 6
+    horizon_length: 96
+    minibatch_size: 98304
+    mini_epochs: 5
     critic_coef: 5
     clip_value: False
     seq_len: 4
