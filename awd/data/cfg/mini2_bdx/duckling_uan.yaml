@@ -47,6 +47,9 @@ env:
 
   uan_history_steps: 20
   target_dof: 0
+
+  save_plots: False
+  save_num_plots: 10
     
   asset:
     uanDataRoot: "output/UAN_data"

@@ -36,13 +36,19 @@ class DucklingUAN(DucklingAMP):
         self.real_velocities = self.reference_positions.clone()
         self.real_positions = self.reference_positions.clone()
 
+        self.pos_history = self.reference_positions.clone()
+
         self.pos_vel_errors = torch.zeros((self.num_envs, self.uan_history_steps, 2), device=self.device, dtype=torch.float)
         self.target_positions = torch.zeros((self.num_envs, self.num_dof), device=self.device, dtype=torch.float)
 
         self.target_dof = cfg["env"]["target_dof"]
+        self.target_dof_name = self.dof_names[self.target_dof]
         self.phase = 0
         self.waves = None
         self.load_uan_data()
+        
+        self.save_plots = cfg["env"]["save_plots"]
+        self.save_num_plots = cfg["env"]["save_num_plots"]
         return
     
     def load_uan_data(self):
@@ -50,9 +56,8 @@ class DucklingUAN(DucklingAMP):
         sample_paths = os.listdir(data_root)
 
         waves = []
-        dof_name = self.dof_names[self.target_dof]
         for sample_path in sample_paths:
-            if dof_name not in sample_path:
+            if self.target_dof_name not in sample_path:
                 continue
             sample = np.load(os.path.join(data_root, sample_path), allow_pickle=True).item()
             waves.append(sample)
@@ -113,6 +118,8 @@ class DucklingUAN(DucklingAMP):
             self.pos_vel_errors[:, 0, 0] = self._dof_pos[:, self.target_dof] - self.reference_positions[:, self.phase]
             self.pos_vel_errors[:, 0, 1] = self._dof_vel[:, self.target_dof] - self.reference_velocities[:, self.phase]
             self.pos_vel_errors[:, 1:, :] = self.pos_vel_errors[:, :-1, :].clone()
+
+            self.pos_history[:, self.phase] = self._dof_pos[:, self.target_dof]
         return
 
     def post_physics_step(self):
@@ -130,16 +137,31 @@ class DucklingUAN(DucklingAMP):
         return
     
     def _compute_reward(self, actions):
-        r_sim_to_real, r_smoothness = uan_reward(self.real_positions[:, self.target_dof], self._dof_pos[:, self.target_dof], self.last_actions.squeeze(1), self.actions.squeeze(1))
+        r_sim_to_real, r_smoothness = uan_reward(self.real_positions[:, self.target_dof], self._dof_pos[:, self.target_dof], 
+                                                 self.last_actions.squeeze(1), self.actions.squeeze(1))
         self.rew_buf[:] = r_sim_to_real + r_smoothness
         self.episode_reward_sums["r_sim_to_real"] += r_sim_to_real
         self.episode_reward_sums["r_smoothness"] += r_smoothness 
 
     def _reset_env_tensors(self, env_ids):       
-        super()._reset_env_tensors(env_ids) 
+        super()._reset_env_tensors(env_ids)
+
+        if self.save_plots:
+            save_path = os.path.join(self.cfg["env"]["asset"]["uanDataRoot"], "validation")
+            os.makedirs(save_path, exist_ok=True)
+            ref_pos, real_pos, pos_hist = self.reference_positions[:self.save_num_plots].cpu().numpy(), \
+                                          self.real_positions[:self.save_num_plots].cpu().numpy(), \
+                                          self.pos_history[:self.save_num_plots].cpu().numpy()
+            
+            concatenated = np.concatenate([ref_pos.reshape(self.save_num_plots, 1, -1), 
+                                           real_pos.reshape(self.save_num_plots, 1, -1), 
+                                           pos_hist.reshape(self.save_num_plots, 1, -1)], axis=1)
+            np.save(os.path.join(save_path, f"validation_{self.target_dof_name}.npy"), concatenated)
+
         self.phase = 0
         self.pos_vel_errors[:] = 0
         self.target_positions[:] = 0
+        self.pos_history[:] = 0
 
         rand_indices = np.random.randint(0, len(self.waves), self.num_envs)
         waves = self.waves[rand_indices]
