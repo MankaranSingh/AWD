@@ -50,7 +50,10 @@ class DucklingUAN(DucklingAMP):
         sample_paths = os.listdir(data_root)
 
         waves = []
+        dof_name = self.dof_names[self.target_dof]
         for sample_path in sample_paths:
+            if dof_name not in sample_path:
+                continue
             sample = np.load(os.path.join(data_root, sample_path), allow_pickle=True).item()
             waves.append(sample)
         self.waves = np.array(waves)
