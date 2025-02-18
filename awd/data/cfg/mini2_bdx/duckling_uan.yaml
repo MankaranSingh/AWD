@@ -46,11 +46,11 @@ env:
     new_sample_s: [0.4, 0.2, 0.5, 0.6] # s
   
   enable_corrective_torque: True
-  uan_history_steps: 60
+  uan_history_steps: 20
   target_dof: 0
 
   validation: False
-  save_num_plots: 10
+  save_num_plots: 20
     
   asset:
     uanDataRoot: "output/UAN_data"
