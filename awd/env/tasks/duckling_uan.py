@@ -62,7 +62,7 @@ class DucklingUAN(DucklingAMP):
             if "npy" not in sample_path:
                 continue
             if self.target_dof_name not in sample_path:
-                continue
+                pass
             sample = np.load(os.path.join(data_root, sample_path), allow_pickle=True).item()
             waves.append(sample)
         self.waves = np.array(waves)
@@ -183,7 +183,7 @@ class DucklingUAN(DucklingAMP):
         self.phase += 1
         self.phase = np.clip(self.phase, 0, self.trajectory_size-2)
         
-        self.rew_buf[:] = r_sim_to_real_pos + r_sim_to_real_vel #+ r_smoothness
+        self.rew_buf[:] = r_sim_to_real_pos
         self.episode_reward_sums["r_sim_to_real_pos"] += r_sim_to_real_pos
         self.episode_reward_sums["r_sim_to_real_vel"] += r_sim_to_real_vel
         self.episode_reward_sums["r_smoothness"] += r_smoothness 
@@ -227,4 +227,4 @@ def uan_reward(q_real, q_sim, qq_real, qq_sim, prev_action, action):
     r_smoothness = 0.5 * torch.exp(-0.5 * torch.abs(action - prev_action))
 
     # Total reward
-    return r_sim_to_real_pos, r_sim_to_real_vel*0.1, r_smoothness*2
+    return r_sim_to_real_pos, r_sim_to_real_vel, r_smoothness*2

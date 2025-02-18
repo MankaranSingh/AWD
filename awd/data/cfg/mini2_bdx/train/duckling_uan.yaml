@@ -68,8 +68,8 @@ params:
     truncate_grads: False
     ppo: True
     e_clip: 0.2
-    horizon_length: 32
-    minibatch_size: 16384
+    horizon_length: 64
+    minibatch_size: 32768
     mini_epochs: 6
     critic_coef: 5
     clip_value: False
