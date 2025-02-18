@@ -208,6 +208,7 @@ def uan_reward(q_real, q_sim, qq_real, qq_sim, prev_action, action):
 
     # Sim-to-real matching reward with multi-scale exponentials
     r_sim_to_real_pos = -1.5 * error_pos \
+                    + 4.0 * torch.exp(-100 * error_pos**2) \
                     + 4.0 * torch.exp(-300 * error_pos**2) \
                     + 5.0 * torch.exp(-1000 * error_pos**2)
     
