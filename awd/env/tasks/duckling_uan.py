@@ -60,15 +60,13 @@ class DucklingUAN(DucklingAMP):
         for sample_path in sample_paths:
             if "npy" not in sample_path:
                 continue
-            if self.target_dof_name not in sample_path:
-                pass #continue
             sample = np.load(os.path.join(data_root, sample_path), allow_pickle=True).item()
             waves.append(sample)
         self.waves = np.array(waves)
         return
     
     def get_obs_size(self):
-        return self.uan_history_steps
+        return 2*self.uan_history_steps
 
     def pre_physics_step(self, actions):
         self.actions = actions.clone()
@@ -121,7 +119,7 @@ class DucklingUAN(DucklingAMP):
 
             self.pos_vel_errors[:, 1:, :] = self.pos_vel_errors[:, :-1, :].clone()
             self.pos_vel_errors[:, 0, 0] = self.reference_positions[:, self.phase] - self._dof_pos[:, self.target_dof]
-            self.pos_vel_errors[:, 0, 1] = self.reference_velocities[:, self.phase] - self._dof_vel[:, self.target_dof]
+            self.pos_vel_errors[:, 0, 1] = (self.reference_velocities[:, self.phase] - self._dof_vel[:, self.target_dof])/10
 
             self.pos_history[:, self.phase] = self._dof_pos[:, self.target_dof]
         return
@@ -131,7 +129,7 @@ class DucklingUAN(DucklingAMP):
         return
 
     def _compute_observations(self, env_ids=None):
-        self.obs_buf[:] = 5 * self.pos_vel_errors[:, :, 0].reshape(self.num_envs, -1)
+        self.obs_buf[:] = self.pos_vel_errors.reshape(self.num_envs, -1)
     
     def _get_duckling_collision_filter(self):
         return 1 # disable self collisions
@@ -145,7 +143,7 @@ class DucklingUAN(DucklingAMP):
                                                  self.real_velocities[:, self.phase], self._dof_vel[:, self.target_dof],
                                                  self.last_actions.squeeze(1), self.actions.squeeze(1))
         
-        self.rew_buf[:] = r_sim_to_real_pos #+ r_sim_to_real_vel + r_smoothness
+        self.rew_buf[:] = r_sim_to_real_pos #+ r_sim_to_real_vel #+ r_smoothness
         self.episode_reward_sums["r_sim_to_real_pos"] += r_sim_to_real_pos
         self.episode_reward_sums["r_sim_to_real_vel"] += r_sim_to_real_vel
         self.episode_reward_sums["r_smoothness"] += r_smoothness 
@@ -208,6 +206,7 @@ def uan_reward(q_real, q_sim, qq_real, qq_sim, prev_action, action):
 
     # Sim-to-real matching reward with multi-scale exponentials
     r_sim_to_real_pos = -1.5 * error_pos \
+                    + 4.0 * torch.exp(-100 * error_pos**2) \
                     + 4.0 * torch.exp(-300 * error_pos**2) \
                     + 5.0 * torch.exp(-1000 * error_pos**2)
     

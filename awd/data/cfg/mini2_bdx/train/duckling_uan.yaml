@@ -54,7 +54,7 @@ params:
     normalize_advantage: True
     gamma: 0.99
     tau: 0.95
-    learning_rate: 5e-4 # overwritten if adaptive lr_schedule
+    learning_rate: 4e-5 # overwritten if adaptive lr_schedule
     lr_schedule: constant # constant
     kl_threshold: 0.008 # target kl for adaptive lr
     score_to_win: 20000

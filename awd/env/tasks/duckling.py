@@ -72,6 +72,7 @@ class Duckling(BaseTask):
         self._root_height_obs = self.cfg["env"].get("rootHeightObs", True)
         self._randomize_mask_joints = self.cfg["env"].get("randomizeMaskJoints", False)
         self._enable_early_termination = self.cfg["env"]["enableEarlyTermination"]
+        self.override_dof_limits = self.cfg["env"].get("overrideDofLimits", False)
         
         key_bodies = self.cfg["env"]["keyBodies"]
         contact_bodies = self.cfg["env"]["contactBodies"]
@@ -586,55 +587,12 @@ class Duckling(BaseTask):
             for prop_type in props_to_set:
                 if self._dof_props_config[dof_name].get(prop_type, None) is not None:
                     dof_prop[prop_type][i] = self._dof_props_config[dof_name][prop_type]
+                if self.override_dof_limits:
+                    dof_prop["lower"][i] = np.deg2rad(-90)
+                    dof_prop["upper"][i] = np.deg2rad(90)
+                    
             self.gym.set_actor_dof_properties(env_ptr, duckling_handle, dof_prop)
         self.duckling_handles.append(duckling_handle)
-
-    def _build_pd_action_offset_scale(self):
-        num_joints = len(self._dof_offsets) - 1
-        
-        lim_low = self.dof_limits_lower.cpu().numpy()
-        lim_high = self.dof_limits_upper.cpu().numpy()
-
-        for j in range(num_joints):
-            dof_offset = self._dof_offsets[j]
-            dof_size = self._dof_offsets[j + 1] - self._dof_offsets[j]
-
-            if (dof_size == 3):
-                curr_low = lim_low[dof_offset:(dof_offset + dof_size)]
-                curr_high = lim_high[dof_offset:(dof_offset + dof_size)]
-                curr_low = np.max(np.abs(curr_low))
-                curr_high = np.max(np.abs(curr_high))
-                curr_scale = max([curr_low, curr_high])
-                curr_scale = 1.2 * curr_scale
-                curr_scale = min([curr_scale, np.pi])
-
-                lim_low[dof_offset:(dof_offset + dof_size)] = -curr_scale
-                lim_high[dof_offset:(dof_offset + dof_size)] = curr_scale
-                
-                #lim_low[dof_offset:(dof_offset + dof_size)] = -np.pi
-                #lim_high[dof_offset:(dof_offset + dof_size)] = np.pi
-
-
-            elif (dof_size == 1):
-                curr_low = lim_low[dof_offset]
-                curr_high = lim_high[dof_offset]
-                curr_mid = 0.5 * (curr_high + curr_low)
-                
-                # extend the action range to be a bit beyond the joint limits so that the motors
-                # don't lose their strength as they approach the joint limits
-                curr_scale = 0.7 * (curr_high - curr_low)
-                curr_low = curr_mid - curr_scale
-                curr_high = curr_mid + curr_scale
-
-                lim_low[dof_offset] = curr_low
-                lim_high[dof_offset] =  curr_high
-
-        self._pd_action_offset = 0.5 * (lim_high + lim_low)
-        self._pd_action_scale = 0.5 * (lim_high - lim_low)
-        self._pd_action_offset = to_torch(self._pd_action_offset, device=self.device)
-        self._pd_action_scale = to_torch(self._pd_action_scale, device=self.device)
-
-        return
 
     def _get_duckling_collision_filter(self):
         return 0
@@ -778,7 +736,7 @@ class Duckling(BaseTask):
                 self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
                 self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
             elif (self._pd_control): # isaac based position contol
-                pd_tar = self._action_to_pd_targets(action_delayed) + self._initial_dof_pos
+                pd_tar = action_delayed*self.power_scale + self._default_dof_pos
                 if self._mask_joint_values is not None:
                     pd_tar[:, self._mask_joint_ids] = self._mask_joint_values
                 pd_tar_tensor = gymtorch.unwrap_tensor(pd_tar)
@@ -903,10 +861,6 @@ class Duckling(BaseTask):
         mask_joint_ids = to_torch(mask_joint_ids, device=self.device, dtype=torch.long)
         joint_ids = to_torch(joint_ids, device=self.device, dtype=torch.long)
         return mask_joint_ids, joint_ids
-
-    def _action_to_pd_targets(self, action):
-        pd_tar = self._pd_action_offset + self._pd_action_scale * action #+ self._initial_dof_pos
-        return pd_tar
 
     def _init_camera(self):
         self.gym.refresh_actor_root_state_tensor(self.sim)

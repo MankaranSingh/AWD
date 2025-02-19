@@ -32,24 +32,15 @@ env:
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
+  overrideDofLimits: True
 
-  waveTypes: ["sine", "square", "gaussian"]
-  sine_params: 
-    amplitudes: [10, 5, 15, 20] # deg
-    frequencies: [2, 5, 1.5, 1] # Hz
-  square_params:  
-    amplitudes: [10, 5, 15, 20] # deg
-    frequencies: [2, 5, 1.5, 1] # Hz
-  gaussian_params:  
-    mean: [0, 5, 5, -5] # deg
-    std: [10, 20, 30, 40] # deg
-    new_sample_s: [0.4, 0.2, 0.5, 0.6] # s
+  generate_num_waves: 100
   
   enable_corrective_torque: True
   uan_history_steps: 20
   target_dof: 0
 
-  validation: False
+  validation: True
   save_num_plots: 20
     
   asset:

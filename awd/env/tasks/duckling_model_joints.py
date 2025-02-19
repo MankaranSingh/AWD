@@ -50,6 +50,84 @@ def gaussian_noise(new_sample_s=0.4, mean=0, std_dev=15, duration=5, dt=0.01, de
     
     return t, y
 
+def composite_wave(total_duration=20, dt=0.005, lower=-90, upper=90, degrees=True):
+    """
+    Generates a composite wave with fully randomized segments.
+    Each segment is randomly chosen as a sine, square, or Gaussian noise waveform.
+    Each segment’s frequency (or update interval), amplitude, and vertical offset are randomized.
+    
+    Parameters:
+      total_duration: Overall duration of the composite wave (seconds)
+      dt: Time step (seconds)
+      lower, upper: Lower and upper bounds for the signal
+      degrees: If True, the provided bounds are in degrees and are converted to radians
+      
+    Returns:
+      t: Time array for the composite signal
+      y: Composite signal (values clipped within [lower, upper])
+    """
+    # Convert bounds if working in degrees.
+    if degrees:
+        lower_bound = lower * np.pi / 180
+        upper_bound = upper * np.pi / 180
+    else:
+        lower_bound, upper_bound = lower, upper
+
+    # Choose a random number of segments (e.g., 2 or 3)
+    num_segments = np.random.randint(1, 5)
+    seg_duration = total_duration / num_segments
+    segments_t, segments_y = [], []
+    current_time = 0
+
+    for _ in range(num_segments):
+        t_seg = np.arange(0, seg_duration, dt)
+        wave_type = np.random.choice(['sine', 'square', 'gaussian'])
+
+        if wave_type in ['sine', 'square']:
+            # Random frequency between 0.2 and 2.0 Hz.
+            freq = np.random.uniform(0.5, 2.0)
+            # Default amplitude is half the full range; choose a random fraction of that.
+            default_amp = (upper_bound - lower_bound) / 6.0
+            amp = np.random.uniform(0.1, 1.0) * default_amp
+            # Random vertical offset: must be chosen so that [offset-amp, offset+amp] is within bounds.
+            min_offset = lower_bound + amp
+            max_offset = upper_bound - amp
+            if min_offset > max_offset:
+                offset = (lower_bound + upper_bound) / 2.0
+            else:
+                offset = np.random.uniform(min_offset, max_offset)
+            phase = np.random.uniform(0, 2*np.pi)
+            if wave_type == 'sine':
+                y_seg = offset + amp * np.sin(2 * np.pi * freq * t_seg + phase)
+            else:  # square wave
+                y_seg = offset + amp * np.sign(np.sin(2 * np.pi * freq * t_seg + phase))
+        else:  # Gaussian noise segment
+            # Random update interval between 0.2 and 1.0 seconds.
+            update_interval = np.random.uniform(0.1, 0.4)
+            # Default standard deviation is one-sixth the range; randomize it.
+            default_std = (upper_bound - lower_bound) / 12.0
+            std_dev = np.random.uniform(0.1, 1.5) * default_std
+            # Random mean offset within the allowed range.
+            mean = np.random.uniform(lower_bound, upper_bound)
+            y_seg = np.zeros_like(t_seg)
+            last_update_time = -update_interval
+            noise_val = np.clip(np.random.normal(mean, std_dev), lower_bound, upper_bound)
+            for i, t_val in enumerate(t_seg):
+                if t_val - last_update_time >= update_interval:
+                    noise_val = np.clip(np.random.normal(mean, std_dev), lower_bound, upper_bound)
+                    last_update_time = t_val
+                y_seg[i] = noise_val
+
+        # Ensure segment remains within bounds.
+        y_seg = np.clip(y_seg, lower_bound, upper_bound)
+        segments_t.append(t_seg + current_time)
+        segments_y.append(y_seg)
+        current_time += seg_duration
+
+    t = np.concatenate(segments_t)
+    y = np.concatenate(segments_y)
+    return t, y
+
 class DucklingModelJoints(DucklingAMP):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
         super().__init__(cfg=cfg,
@@ -72,28 +150,13 @@ class DucklingModelJoints(DucklingAMP):
         self.actual_positions = []
         self.actual_velocities = []
 
-        self.wave_types = cfg["env"]["waveTypes"]  
-        sine_params = cfg["env"]["sine_params"]
-        square_params = cfg["env"]["square_params"]
-        gaussian_params = cfg["env"]["gaussian_params"]
-
+        self.num_waves = self.cfg["env"]["generate_num_waves"]
         self.waves = []
-
-        if "sine" in self.wave_types:
-            for freq, amplitude in zip(sine_params["frequencies"], sine_params["amplitudes"]):
-                _, wave = sine_wave(freq, amplitude, self.max_episode_length_s, self.sim_dt, degrees=True)
-                self.waves.append(wave)
-        if "square" in self.wave_types:
-            for freq, amplitude in zip(square_params["frequencies"], square_params["amplitudes"]):
-                _, wave = square_wave(freq, amplitude, self.max_episode_length_s, self.sim_dt, degrees=True)
-                self.waves.append(wave)
-        if "gaussian" in self.wave_types:
-            for freq, mean, std in zip(gaussian_params["new_sample_s"], gaussian_params["mean"], gaussian_params["std"]):
-                _, wave = gaussian_noise(freq, mean, std, self.max_episode_length_s, self.sim_dt, degrees=True)
-                self.waves.append(wave)
+        for _ in range(self.num_waves):
+            self.waves.append(composite_wave(total_duration=self.max_episode_length_s, dt=self.sim_dt)[1])
 
         self.phase = 0
-        self.current_dof = -1
+        self.current_dof = 0
         self.current_wave = 0
         return
     
@@ -168,29 +231,28 @@ class DucklingModelJoints(DucklingAMP):
             "actual_positions": np.array(self.actual_positions),
             "actual_velocities": np.array(self.actual_velocities)
         }
-        np.save(save_dir + f"/{self.dof_names[self.current_dof]}_{self.current_wave}.npy", data)
+        np.save(save_dir + f"/{self.current_wave}.npy", data)
         return
 
     def _reset_env_tensors(self, env_ids):       
         super()._reset_env_tensors(env_ids) 
         self.phase = 0
 
-        self._save_data()
+        if self.position_targets:
+            self._save_data()
 
         self.position_targets = []
         self.actual_positions = []
         self.actual_velocities = []
         
         # Cycle through DOFs and waves
-        self.current_dof += 1
-        if self.current_dof >= self.num_dof:
-            self.current_dof = 0
-            self.current_wave += 1
-
+        self.current_dof = np.random.randint(0, self.num_dof)
+    
         # End the program if the maximum wave is reached
         if self.current_wave >= len(self.waves):
             print("All waves and DOFs have been cycled through. Ending program.")
             exit(0)
+        self.current_wave += 1
 
         print("Current DOF: ", self.current_dof, "| Current Wave: ", self.current_wave)
         return
