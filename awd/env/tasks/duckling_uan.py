@@ -47,7 +47,7 @@ class DucklingUAN(DucklingAMP):
         self.waves = None
         self.load_uan_data()
         
-        self.validation = cfg["env"]["validation"]
+        self.validation = self.cfg["args"].test
         self.save_num_plots = cfg["env"]["save_num_plots"]
         self.enable_corrective_torque = cfg["env"]["enable_corrective_torque"]
         return
@@ -74,9 +74,9 @@ class DucklingUAN(DucklingAMP):
     
         self.render()
         for _ in range(self.control_freq_inv):
-            self.target_positions[:, self.target_dof] = self.reference_positions[:, self.phase]
-            self.phase += 1
-            self.phase = np.clip(self.phase, 0, self.trajectory_size-1)
+            self.pos_history[:, self.phase] = self._dof_pos[:, self.target_dof]
+            
+            self.target_positions[:, self.target_dof] = self.reference_positions[:, self.phase+1]
 
             # control strategy
             if self.custom_control: # custom position control
@@ -118,10 +118,8 @@ class DucklingUAN(DucklingAMP):
                 self.update_obs_latency_buffer()
 
             self.pos_vel_errors[:, 1:, :] = self.pos_vel_errors[:, :-1, :].clone()
-            self.pos_vel_errors[:, 0, 0] = self.reference_positions[:, self.phase] - self._dof_pos[:, self.target_dof]
-            self.pos_vel_errors[:, 0, 1] = (self.reference_velocities[:, self.phase] - self._dof_vel[:, self.target_dof])/10
-
-            self.pos_history[:, self.phase] = self._dof_pos[:, self.target_dof]
+            self.pos_vel_errors[:, 0, 0] = self.reference_positions[:, self.phase+1] - self._dof_pos[:, self.target_dof]
+            self.pos_vel_errors[:, 0, 1] = (self.reference_velocities[:, self.phase+1] - self._dof_vel[:, self.target_dof])/10
         return
 
     def post_physics_step(self):
@@ -142,6 +140,9 @@ class DucklingUAN(DucklingAMP):
         r_sim_to_real_pos, r_sim_to_real_vel, r_smoothness = uan_reward(self.real_positions[:, self.phase], self._dof_pos[:, self.target_dof], 
                                                  self.real_velocities[:, self.phase], self._dof_vel[:, self.target_dof],
                                                  self.last_actions.squeeze(1), self.actions.squeeze(1))
+        
+        self.phase += 1
+        self.phase = np.clip(self.phase, 0, self.trajectory_size-2)
         
         self.rew_buf[:] = r_sim_to_real_pos #+ r_sim_to_real_vel #+ r_smoothness
         self.episode_reward_sums["r_sim_to_real_pos"] += r_sim_to_real_pos

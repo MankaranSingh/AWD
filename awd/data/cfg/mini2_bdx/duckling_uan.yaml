@@ -40,7 +40,6 @@ env:
   uan_history_steps: 20
   target_dof: 0
 
-  validation: True
   save_num_plots: 20
     
   asset:
