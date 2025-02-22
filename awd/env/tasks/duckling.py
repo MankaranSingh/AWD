@@ -37,6 +37,7 @@ from isaacgym import gymtorch
 from isaacgym import gymapi
 from isaacgym.torch_utils import *
 from isaacgym.terrain_utils import *
+from infer_onnx import OnnxInfer
 
 from utils import torch_utils
 
@@ -240,6 +241,14 @@ class Duckling(BaseTask):
             self.action_latency_simstep = torch.zeros(self.num_envs, dtype=torch.long, device=self.device) 
         
         self._reset_latency_buffer(torch.arange(self.num_envs, device=self.device))
+
+        self.uan_correction = self.cfg["env"].get("useUANCorrection", False)
+        if self.uan_correction:
+            self.uan_history_steps = self.cfg["env"].get("uan_history_steps", 20)
+            self.pos_vel_errors = torch.zeros((self.num_envs, self.num_dof, self.uan_history_steps, 2), device=self.device, dtype=torch.float)
+            self.corrective_torques = torch.zeros((self.num_envs, self.num_dof), device=self.device, dtype=torch.float)
+            self.uan_model_path = self.cfg["env"]["asset"]["uanModelPath"]
+            self.load_uan_model()
    
         if self.viewer != None:
             self._init_camera()
@@ -262,6 +271,11 @@ class Duckling(BaseTask):
     def get_num_actors_per_env(self):
         num_actors = self._root_states.shape[0] // self.num_envs
         return num_actors
+
+    def load_uan_model(self):
+        self.uan_model = OnnxInfer(self.uan_model_path, use_gpu=True)
+        assert self.uan_model.input_shape[1] == self.uan_history_steps * 2
+        return
 
     def create_sim(self):
         self.up_axis_idx = self.set_sim_params_up_axis(self.sim_params, 'z')
@@ -318,6 +332,8 @@ class Duckling(BaseTask):
         self.avg_velocities[env_ids] = 0.
         self.action_history[env_ids] = 0.
         self.obs_history[env_ids] = 0.
+        if self.uan_correction:
+            self.pos_vel_errors[env_ids] = 0.
         if self._push_robots_flag:
             self._push_step[env_ids] = torch.randint(self._push_step_interval-self._push_step_range, self._push_step_interval+self._push_step_range, (len(env_ids),), device=self.device)
             self._push_vels = torch_rand_float(-self.max_push_vel, self.max_push_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
@@ -723,14 +739,24 @@ class Duckling(BaseTask):
         if self.common_step_counter % self._action_history_inputs_decimation == 0:
             self.action_history[:,:,1:] = self.action_history[:,:,:-1].clone()
             self.action_history[:,:,0] = action_delayed.clone()
-            
+        self.actions = action_delayed
+    
         self.render()
         for _ in range(self.control_freq_inv):
             # control strategy
+
+            for i in range(self.num_dof):
+                if self.uan_correction:
+                    uan_input = (self.pos_vel_errors[:, i].reshape(-1, self.uan_history_steps*2)).cpu().numpy()
+                    corrective_torques = self.uan_model.infer(uan_input)
+                    self.corrective_torques[:, i] = torch.from_numpy(corrective_torques).to(self.device).squeeze(1)
+
             if self.custom_control: # custom position control
                 if self._mask_joint_values is not None:
                     action_delayed[:, self._mask_joint_ids] = self._mask_joint_values
                 self.torques = self.p_gains*(action_delayed*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
+                if self.uan_correction:
+                    self.torques += self.corrective_torques
                 if self.randomize_torques:
                     self.torques *= self.randomize_torques_factors
                 self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
@@ -760,12 +786,19 @@ class Duckling(BaseTask):
             self.gym.refresh_actor_root_state_tensor(self.sim)
             self.projected_gravity = quat_rotate_inverse(self._duckling_root_states[:, 3:7], self.gravity_vec) # update imu at simulation freq.
 
+            if self.uan_correction:
+                target_velocity = (self.actions - self.last_actions) / (self.sim_dt)
+                self.pos_vel_errors[:, :, 1:, :] = self.pos_vel_errors[:, :, :-1, :].clone()
+                self.pos_vel_errors[:, :, 0, 0] = self.actions - self._dof_pos
+                self.pos_vel_errors[:, :, 0, 1] = target_velocity / 10 # TODO: Move velocity error scaling to config.
+
             if self.cfg["task"]["add_obs_latency"]:
                 self.update_obs_latency_buffer()
+                
         return
 
     def post_physics_step(self):
-        self.progress_buf += 1
+        self.progress_buf += 10
         self.common_step_counter += 1
         self.randomize_buf += 1
 

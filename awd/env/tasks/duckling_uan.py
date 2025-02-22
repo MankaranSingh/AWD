@@ -83,10 +83,10 @@ class DucklingUAN(DucklingAMP):
                 if self._mask_joint_values is not None:
                     self.target_positions[:, self._mask_joint_ids] = self._mask_joint_values
                 self.torques = self.p_gains*(self.target_positions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
-                if self.randomize_torques:
-                    self.torques *= self.randomize_torques_factors
                 if self.enable_corrective_torque:
                     self.torques[:, self.target_dof] += self.corrective_torque.squeeze(1)
+                if self.randomize_torques:
+                    self.torques *= self.randomize_torques_factors
                 self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
                 self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
             elif (self._pd_control): # isaac based position contol

@@ -337,6 +337,7 @@ def main():
         verbose=True,
         input_names=["obs"],
         output_names=["actions"],
+        dynamic_axes={'obs': {0: 'batch_size'}},
     )
     print(f"saved to {model_path_out}")
 

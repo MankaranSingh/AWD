@@ -13,7 +13,7 @@ env:
   hybridInitProb: 1.0
   numAMPObsSteps: 15
 
-  pushRobots: True
+  pushRobots: False
   pushStep: 3 #s
   pushStepRandomRange: 1 #s | push works at pushStep +- pushStepRandomRange
   continousPushSteps: 5
@@ -28,7 +28,7 @@ env:
   customControl: True
 
   localRootObs: True
-  keyBodies: 2["left_foot", "right_foot"]
+  keyBodies: ["left_foot", "right_foot"]
   contactBodies: ["foot_assembly", "foot_assembly_2"]
   maskJoints: ['neck_pitch', 'head_pitch', 'head_yaw', "head_roll", "left_antenna", "right_antenna"]
   maskJointRandomRange: [-0.5, 0.5]
@@ -46,7 +46,11 @@ env:
   obsHistoryInputs: 10
   obsHistoryInputsDecimation: 1
 
+  useUANCorrection: True
+  uan_history_steps: 20
+
   asset:
+    uanModelPath: "output/UAN_data/uan_model.onnx"
     assetRoot: "awd/data/assets"
     assetFileName: "mini2_bdx/mini2_bdx.urdf"
 
@@ -78,7 +82,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.2, 0.45] # min max [m/s]
     linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.8, 0.8]          # min max [rad/s]
+    yaw: [-0.1, 0.1]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
