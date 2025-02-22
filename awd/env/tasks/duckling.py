@@ -798,7 +798,7 @@ class Duckling(BaseTask):
         return
 
     def post_physics_step(self):
-        self.progress_buf += 10
+        self.progress_buf += 1
         self.common_step_counter += 1
         self.randomize_buf += 1
 
