@@ -2,7 +2,7 @@
 env: 
   numEnvs: 4096
   envSpacing: 1
-  episodeLength: 5 #s
+  episodeLength: 10 #s
   isFlagrun: False
   enableDebugVis: False
   fixBaseLink: True
@@ -38,7 +38,6 @@ env:
   
   enable_corrective_torque: True
   uan_history_steps: 20
-  target_dof: 0
 
   save_num_plots: 20
     

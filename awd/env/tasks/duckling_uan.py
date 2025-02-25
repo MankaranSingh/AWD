@@ -41,8 +41,7 @@ class DucklingUAN(DucklingAMP):
         self.pos_vel_errors = torch.zeros((self.num_envs, self.uan_history_steps, 2), device=self.device, dtype=torch.float)
         self.target_positions = torch.zeros((self.num_envs, self.num_dof), device=self.device, dtype=torch.float)
 
-        self.target_dof = cfg["env"]["target_dof"]
-        self.target_dof_name = self.dof_names[self.target_dof]
+        self.target_dof = torch.zeros((self.num_envs,), device=self.device, dtype=torch.float)
         self.phase = 0
         self.waves = None
         self.load_uan_data()
@@ -50,6 +49,7 @@ class DucklingUAN(DucklingAMP):
         self.validation = self.cfg["args"].test
         self.save_num_plots = cfg["env"]["save_num_plots"]
         self.enable_corrective_torque = cfg["env"]["enable_corrective_torque"]
+        self.arange_num_envs = torch.arange(self.num_envs, device=self.device, dtype=torch.long)
         return
     
     def load_uan_data(self):
@@ -66,15 +66,14 @@ class DucklingUAN(DucklingAMP):
         return
     
     def get_obs_size(self):
-        return 2*self.uan_history_steps
+        return self.uan_history_steps*2 + 1
 
     def pre_physics_step(self, actions):
         self.actions = actions.clone()
-        self.corrective_torque = actions
-    
+
         self.render()
         for _ in range(self.control_freq_inv):
-            self.pos_history[:, self.phase] = self._dof_pos[:, self.target_dof]
+            self.pos_history[:, self.phase] = self._dof_pos[self.arange_num_envs, self.target_dof]
             
             self.target_positions[:, self.target_dof] = self.reference_positions[:, self.phase+1]
 
@@ -118,8 +117,8 @@ class DucklingUAN(DucklingAMP):
                 self.update_obs_latency_buffer()
 
             self.pos_vel_errors[:, 1:, :] = self.pos_vel_errors[:, :-1, :].clone()
-            self.pos_vel_errors[:, 0, 0] = self.reference_positions[:, self.phase+1] - self._dof_pos[:, self.target_dof]
-            self.pos_vel_errors[:, 0, 1] = (self.reference_velocities[:, self.phase+1] - self._dof_vel[:, self.target_dof])/10
+            self.pos_vel_errors[:, 0, 0] = (self.reference_positions[:, self.phase+1] - self._dof_pos[self.arange_num_envs, self.target_dof])
+            self.pos_vel_errors[:, 0, 1] = (self.reference_velocities[:, self.phase+1] - self._dof_vel[self.arange_num_envs, self.target_dof])/10
         return
 
     def post_physics_step(self):
@@ -129,22 +128,19 @@ class DucklingUAN(DucklingAMP):
     def _compute_observations(self, env_ids=None):
         self.obs_buf[:] = self.pos_vel_errors.reshape(self.num_envs, -1)
     
-    def _get_duckling_collision_filter(self):
-        return 1 # disable self collisions
-
     def _compute_reset(self):
         self.reset_buf[:] = self.progress_buf > self.max_episode_length
         return
     
     def _compute_reward(self, actions):
-        r_sim_to_real_pos, r_sim_to_real_vel, r_smoothness = uan_reward(self.real_positions[:, self.phase], self._dof_pos[:, self.target_dof], 
-                                                 self.real_velocities[:, self.phase], self._dof_vel[:, self.target_dof],
+        r_sim_to_real_pos, r_sim_to_real_vel, r_smoothness = uan_reward(self.real_positions[:, self.phase], self._dof_pos[self.arange_num_envs, self.target_dof], 
+                                                 self.real_velocities[:, self.phase], self._dof_vel[self.arange_num_envs, self.target_dof],
                                                  self.last_actions.squeeze(1), self.actions.squeeze(1))
         
         self.phase += 1
         self.phase = np.clip(self.phase, 0, self.trajectory_size-2)
         
-        self.rew_buf[:] = r_sim_to_real_pos #+ r_sim_to_real_vel #+ r_smoothness
+        self.rew_buf[:] = r_sim_to_real_pos #+ r_sim_to_real_vel + r_smoothness
         self.episode_reward_sums["r_sim_to_real_pos"] += r_sim_to_real_pos
         self.episode_reward_sums["r_sim_to_real_vel"] += r_sim_to_real_vel
         self.episode_reward_sums["r_smoothness"] += r_smoothness 
@@ -162,7 +158,7 @@ class DucklingUAN(DucklingAMP):
             concatenated = np.concatenate([ref_pos.reshape(self.save_num_plots, 1, -1), 
                                            real_pos.reshape(self.save_num_plots, 1, -1), 
                                            pos_hist.reshape(self.save_num_plots, 1, -1)], axis=1)
-            np.save(os.path.join(save_path, f"validation_{self.target_dof_name}.npy"), concatenated)
+            np.save(os.path.join(save_path, f"validation.npy"), concatenated)
             print("Validation data saved..")
             exit()
 
@@ -170,6 +166,8 @@ class DucklingUAN(DucklingAMP):
         self.pos_vel_errors[:] = 0
         self.target_positions[:] = 0
         self.pos_history[:] = 0
+
+        self.target_dof = torch.randint(0, self.num_dof, (self.num_envs,), device=self.device, dtype=torch.long)
 
         rand_indices = np.random.randint(0, len(self.waves), self.num_envs)
         waves = self.waves[rand_indices]
