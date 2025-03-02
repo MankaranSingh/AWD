@@ -22,13 +22,16 @@ class OnnxInfer:
         else:
             raise ValueError(f"Input '{self.input_name}' not found in model.")
 
-    def infer(self, inputs):
+    def infer(self, inputs, ret_torch=True, device="cuda"):
         # Ensure inputs have the correct batch format
         if inputs.ndim == len(self.input_shape) - 1:  # Missing batch dimension
             inputs = np.expand_dims(inputs, axis=0)  # Add batch dim
         
-        outputs = self.ort_session.run(None, {self.input_name: inputs})
-        return outputs[0]  # Return batch output
+        outputs = self.ort_session.run(None, {self.input_name: inputs})[0]
+        if ret_torch:
+            return torch.from_numpy(outputs).to(device)
+        else:
+            return outputs
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -47,7 +50,7 @@ if __name__ == "__main__":
     warmup = 100
     for i in range(1000):
         start = time.time()
-        _ = oi.infer(inputs)
+        out = oi.infer(inputs, ret_torch=False)
         if i >= warmup:
             times.append(time.time() - start)
 

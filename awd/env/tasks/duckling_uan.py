@@ -41,7 +41,9 @@ class DucklingUAN(DucklingAMP):
         self.pos_vel_errors = torch.zeros((self.num_envs, self.uan_history_steps, 2), device=self.device, dtype=torch.float)
         self.target_positions = torch.zeros((self.num_envs, self.num_dof), device=self.device, dtype=torch.float)
 
-        self.target_dof = torch.zeros((self.num_envs,), device=self.device, dtype=torch.float)
+        self.target_dof = torch.ones((self.num_envs,), device=self.device, dtype=torch.long) * cfg["env"]["target_dof"]
+        self.randomize_target_dof = cfg["env"]["randomize_target_dof"]
+
         self.phase = 0
         self.waves = None
         self.load_uan_data()
@@ -49,6 +51,7 @@ class DucklingUAN(DucklingAMP):
         self.validation = self.cfg["args"].test
         self.save_num_plots = cfg["env"]["save_num_plots"]
         self.enable_corrective_torque = cfg["env"]["enable_corrective_torque"]
+        self.use_pd_gain_correction = cfg["env"]["use_pd_gain_correction"]
         self.arange_num_envs = torch.arange(self.num_envs, device=self.device, dtype=torch.long)
         return
     
@@ -66,24 +69,30 @@ class DucklingUAN(DucklingAMP):
         return
     
     def get_obs_size(self):
-        return self.uan_history_steps*2 + 1
+        return self.uan_history_steps*2
 
     def pre_physics_step(self, actions):
         self.actions = actions.clone()
+        self.corrective_torque = self.actions[:, 0]
+        if self.use_pd_gain_correction:
+            p_gain_correction = self.actions[:, 1].reshape(-1, 1)
+            d_gain_correction = self.actions[:, 2].reshape(-1, 1)
 
         self.render()
         for _ in range(self.control_freq_inv):
             self.pos_history[:, self.phase] = self._dof_pos[self.arange_num_envs, self.target_dof]
-            
-            self.target_positions[:, self.target_dof] = self.reference_positions[:, self.phase+1]
+            self.target_positions[self.arange_num_envs, self.target_dof] = self.reference_positions[:, self.phase+1]
 
             # control strategy
             if self.custom_control: # custom position control
                 if self._mask_joint_values is not None:
                     self.target_positions[:, self._mask_joint_ids] = self._mask_joint_values
-                self.torques = self.p_gains*(self.target_positions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
+                if self.use_pd_gain_correction:
+                    self.torques = (self.p_gains+p_gain_correction)*(self.target_positions*self.power_scale + self._default_dof_pos - self._dof_pos) - ((self.d_gains+d_gain_correction) * self._dof_vel)
+                else:
+                    self.torques = self.p_gains*(self.target_positions*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
                 if self.enable_corrective_torque:
-                    self.torques[:, self.target_dof] += self.corrective_torque.squeeze(1)
+                    self.torques[self.arange_num_envs, self.target_dof] += self.corrective_torque
                 if self.randomize_torques:
                     self.torques *= self.randomize_torques_factors
                 self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
@@ -118,7 +127,7 @@ class DucklingUAN(DucklingAMP):
 
             self.pos_vel_errors[:, 1:, :] = self.pos_vel_errors[:, :-1, :].clone()
             self.pos_vel_errors[:, 0, 0] = (self.reference_positions[:, self.phase+1] - self._dof_pos[self.arange_num_envs, self.target_dof])
-            self.pos_vel_errors[:, 0, 1] = (self.reference_velocities[:, self.phase+1] - self._dof_vel[self.arange_num_envs, self.target_dof])/10
+            self.pos_vel_errors[:, 0, 1] = (self.reference_velocities[:, self.phase+1] - self._dof_vel[self.arange_num_envs, self.target_dof])/25.0
         return
 
     def post_physics_step(self):
@@ -140,7 +149,7 @@ class DucklingUAN(DucklingAMP):
         self.phase += 1
         self.phase = np.clip(self.phase, 0, self.trajectory_size-2)
         
-        self.rew_buf[:] = r_sim_to_real_pos #+ r_sim_to_real_vel + r_smoothness
+        self.rew_buf[:] = r_sim_to_real_pos + r_smoothness #+ r_sim_to_real_vel 
         self.episode_reward_sums["r_sim_to_real_pos"] += r_sim_to_real_pos
         self.episode_reward_sums["r_sim_to_real_vel"] += r_sim_to_real_vel
         self.episode_reward_sums["r_smoothness"] += r_smoothness 
@@ -167,16 +176,17 @@ class DucklingUAN(DucklingAMP):
         self.target_positions[:] = 0
         self.pos_history[:] = 0
 
-        self.target_dof = torch.randint(0, self.num_dof, (self.num_envs,), device=self.device, dtype=torch.long)
+        if self.randomize_target_dof:
+            self.target_dof = torch.randint(0, self.num_dof, (self.num_envs,), device=self.device, dtype=torch.long)
 
         rand_indices = np.random.randint(0, len(self.waves), self.num_envs)
         waves = self.waves[rand_indices]
         
         for i in range(self.num_envs):
-            self.reference_positions[i] = torch.tensor(waves[i]["position_targets"][:self.trajectory_size, 0], device=self.device, dtype=torch.float)
+            self.reference_positions[i] = torch.tensor(waves[i]["position_targets"][:self.trajectory_size], device=self.device, dtype=torch.float)
             self.reference_velocities[i] = torch.diff(self.reference_positions[i], prepend=self.reference_positions[i, :1]) / self.sim_dt
-            self.real_velocities[i] = torch.tensor(waves[i]["actual_velocities"][:self.trajectory_size, 0], device=self.device, dtype=torch.float)
-            self.real_positions[i] = torch.tensor(waves[i]["actual_positions"][:self.trajectory_size, 0], device=self.device, dtype=torch.float)
+            self.real_velocities[i] = torch.tensor(waves[i]["actual_velocities"][:self.trajectory_size], device=self.device, dtype=torch.float)
+            self.real_positions[i] = torch.tensor(waves[i]["actual_positions"][:self.trajectory_size], device=self.device, dtype=torch.float)
         
         for key in self.episode_reward_sums.keys():
             self.extras["episode"]['rew_' + key] = torch.mean(self.episode_reward_sums[key][env_ids]/self.max_episode_length)
@@ -220,6 +230,7 @@ def uan_reward(q_real, q_sim, qq_real, qq_sim, prev_action, action):
 
     # Smoothness reward (penalizing sudden torque changes)
     r_smoothness = 0.5 * torch.exp(-0.5 * torch.abs(action - prev_action))
+    #r_smoothness = 0.5 * torch.sum(torch.exp(-0.5 * torch.abs(action - prev_action)), dim=1)
 
     # Total reward
     return r_sim_to_real_pos, r_sim_to_real_vel, r_smoothness

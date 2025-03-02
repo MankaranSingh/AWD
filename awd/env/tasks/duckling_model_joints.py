@@ -50,7 +50,7 @@ def gaussian_noise(new_sample_s=0.4, mean=0, std_dev=15, duration=5, dt=0.01, de
     
     return t, y
 
-def composite_wave(total_duration=20, dt=0.005, lower=-90, upper=90, degrees=True):
+def composite_wave(total_duration=20, dt=0.005, lower=-45, upper=45, degrees=True, randomize_offsets=False):
     """
     Generates a composite wave with fully randomized segments.
     Each segment is randomly chosen as a sine, square, or Gaussian noise waveform.
@@ -89,13 +89,15 @@ def composite_wave(total_duration=20, dt=0.005, lower=-90, upper=90, degrees=Tru
             # Default amplitude is half the full range; choose a random fraction of that.
             default_amp = (upper_bound - lower_bound) / 6.0
             amp = np.random.uniform(0.1, 1.0) * default_amp
-            # Random vertical offset: must be chosen so that [offset-amp, offset+amp] is within bounds.
-            min_offset = lower_bound + amp
-            max_offset = upper_bound - amp
-            if min_offset > max_offset:
-                offset = (lower_bound + upper_bound) / 2.0
-            else:
-                offset = np.random.uniform(min_offset, max_offset)
+            offset = 0.0
+            if randomize_offsets:
+                # Random vertical offset: must be chosen so that [offset-amp, offset+amp] is within bounds.
+                min_offset = lower_bound + amp
+                max_offset = upper_bound - amp
+                if min_offset > max_offset:
+                    offset = (lower_bound + upper_bound) / 2.0
+                else:
+                    offset = np.random.uniform(min_offset, max_offset)
             phase = np.random.uniform(0, 2*np.pi)
             if wave_type == 'sine':
                 y_seg = offset + amp * np.sin(2 * np.pi * freq * t_seg + phase)
@@ -105,8 +107,8 @@ def composite_wave(total_duration=20, dt=0.005, lower=-90, upper=90, degrees=Tru
             # Random update interval between 0.2 and 1.0 seconds.
             update_interval = np.random.uniform(0.1, 0.4)
             # Default standard deviation is one-sixth the range; randomize it.
-            default_std = (upper_bound - lower_bound) / 12.0
-            std_dev = np.random.uniform(0.1, 1.5) * default_std
+            default_std = (upper_bound - lower_bound) / 3.0
+            std_dev = 0.0
             # Random mean offset within the allowed range.
             mean = np.random.uniform(lower_bound, upper_bound)
             y_seg = np.zeros_like(t_seg)
@@ -127,6 +129,7 @@ def composite_wave(total_duration=20, dt=0.005, lower=-90, upper=90, degrees=Tru
     t = np.concatenate(segments_t)
     y = np.concatenate(segments_y)
     return t, y
+
 
 class DucklingModelJoints(DucklingAMP):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):

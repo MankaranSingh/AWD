@@ -133,9 +133,6 @@ class DucklingUAN(DucklingAMP):
     def _compute_observations(self, env_ids=None):
         self.obs_buf[:] = 5 * self.pos_vel_errors[:, :, 0].reshape(self.num_envs, -1)
     
-    def _get_duckling_collision_filter(self):
-        return 1 # disable self collisions
-
     def _compute_reset(self):
         self.reset_buf[:] = self.progress_buf > self.max_episode_length
         return

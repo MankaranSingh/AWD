@@ -7,21 +7,21 @@ env:
   enableDebugVis: False
   
   pdControl: False
-  powerScale: 1.0
-  controlFrequencyInv: 4 # 50 Hz
+  powerScale: 1.5
+  controlFrequencyInv: 2 # 50 Hz
   stateInit: "Hybrid"
   hybridInitProb: 1.0
-  numAMPObsSteps: 15
+  numAMPObsSteps: 10
 
-  pushRobots: False
+  pushRobots: True
   pushStep: 3 #s
   pushStepRandomRange: 1 #s | push works at pushStep +- pushStepRandomRange
   continousPushSteps: 5
-  maxPushVelXy: 0.3 # m/s
+  maxPushVelXy: 0.4 # m/s
 
   # COM is randomized only once for each actor, but not at each reset
   randomizeCom: False
-  comRandomizeRange: [-0.02, 0.02]
+  comRandomizeRange: [-0.01, 0.01]
   randomizeTorques: False
   torqueMultiplierRange: [0.85, 1.15]
 
@@ -39,18 +39,19 @@ env:
   randomizeMaskJoints: False
   commandChangeStepsMin: 50 #s
   commandChangeStepsMax: 60 #s
-  period: 0.43 #s
+  period: 0.66 #s
 
-  actionHistoryInputs: 10
+  actionHistoryInputs: 2
   actionHistoryInputsDecimation: 1
-  obsHistoryInputs: 10
+  obsHistoryInputs: 2
   obsHistoryInputsDecimation: 1
 
   useUANCorrection: True
+  use_pd_correction: False
   uan_history_steps: 20
 
   asset:
-    uanModelPath: "output/UAN_data/uan_model.onnx"
+    uanModelPath: "output/UAN_data/uan_model_no_pd.onnx"
     assetRoot: "awd/data/assets"
     assetFileName: "mini2_bdx/mini2_bdx.urdf"
 
@@ -61,16 +62,16 @@ env:
 
   learn:
     # rewards
-    linearVelocityXYRewardScale: [1.0, 1.0]
+    linearVelocityXYRewardScale: [2.0, 2.0]
     angularVelocityZRewardScale: 1.0
     torqueRewardScale: -0.000
     feetAirTimeRewardScale: 0.05
-    actionRateRewardScale: -0.001
+    actionRateRewardScale: -0.01
     standStillRewardScale: -0.0
     footSlideRewardScale: -0.0005
 
     # normalization
-    linearVelocityScale: [2.0, 2.0]
+    linearVelocityScale: [1.0, 1.0]
     angularVelocityScale: 0.25
     useAverageVelocities: True
 
@@ -80,9 +81,9 @@ env:
   #   yaw: [0., 0.]          # min max [rad/s]
 
   randomCommandVelocityRanges:
-    linear_x: [-0.2, 0.45] # min max [m/s]
-    linear_y: [-0.35, 0.35]   # min max [m/s]
-    yaw: [-0.1, 0.1]          # min max [rad/s]
+    linear_x: [-0.5, 0.5] # min max [m/s]
+    linear_y: [-0.4, 0.4]   # min max [m/s]
+    yaw: [-0.8, 0.8]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
@@ -139,11 +140,11 @@ task:
     ang_vel_noise: 0.2
     gravity_noise: 0.05
   
-  add_obs_latency: False
-  randomize_obs_motor_latency: False
-  range_obs_motor_latency: [5, 10] # ms
-  randomize_obs_imu_latency: False
-  range_obs_imu_latency: [5, 10] #ms
+  add_obs_latency: True
+  randomize_obs_motor_latency: True
+  range_obs_motor_latency: [0, 0] # ms
+  randomize_obs_imu_latency: True
+  range_obs_imu_latency: [5, 20] #ms
   
   add_action_latency: False
   randomize_action_latency: False
@@ -161,33 +162,37 @@ task:
     #   range: [0., .02]
     #   operation: "additive"
     #   distribution: "gaussian"
-    sim_params: 
-      gravity:
-        range: [0, 0.2]
-        operation: "additive"
-        distribution: "gaussian"
-        
+    # sim_params: 
+    #   gravity:
+    #     range: [0, 0.0]
+    #     operation: "additive"
+    #     distribution: "gaussian"
+    #     schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
+    #     schedule_steps: 100000
     actor_params:
       duckling:
         color: True
         rigid_body_properties:
           mass: 
-            range: [0.9, 1.1]
+            range: [0.95, 1.15]
             operation: "scaling"
             distribution: "uniform"
             setup_only: True # Property will only be randomized once before simulation is started. See Domain Randomization Documentation for more info.
+            schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
+            schedule_steps: 100000
         rigid_shape_properties:
           friction:
             num_buckets: 500
-            range: [0.8, 1.2]
+            range: [0.5, 1.5]
             operation: "scaling"
             distribution: "uniform"
-            
+            schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
+            schedule_steps: 100000
           restitution:
             range: [0., 0.5]
             operation: "scaling"
             distribution: "uniform"
-            
+            schedule_steps: 100000
         # dof_properties:
         #   damping: 
         #     range: [0.8, 1.2]

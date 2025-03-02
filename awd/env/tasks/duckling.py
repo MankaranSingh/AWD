@@ -97,9 +97,9 @@ class Duckling(BaseTask):
         self.com_randomize_range = self.cfg["env"].get("comRandomizeRange", [-0.1, 0.1])
         super().__init__(cfg=self.cfg)
 
-        self.obs_history = torch.zeros(self.num_envs, (self.get_obs_size_per_step()), self._num_obs_history_inputs//self._obs_history_inputs_decimation, 
+        self.obs_history = torch.zeros(self.num_envs, self._num_obs_history_inputs//self._obs_history_inputs_decimation, (self.get_obs_size_per_step()), 
                                           dtype=torch.float, device=self.device, requires_grad=False)
-        self.action_history = torch.zeros(self.num_envs, (self.num_actions), self._num_action_history_inputs//self._action_history_inputs_decimation, 
+        self.action_history = torch.zeros(self.num_envs, self._num_action_history_inputs//self._action_history_inputs_decimation, (self.num_actions), 
                                           dtype=torch.float, device=self.device, requires_grad=False)
         
         # get gym GPU state tensors
@@ -243,13 +243,20 @@ class Duckling(BaseTask):
         self._reset_latency_buffer(torch.arange(self.num_envs, device=self.device))
 
         self.uan_correction = self.cfg["env"].get("useUANCorrection", False)
+        self.p_gain_correction = 0.0
+        self.d_gain_correction = 0.0
         if self.uan_correction:
             self.uan_history_steps = self.cfg["env"].get("uan_history_steps", 20)
             self.pos_vel_errors = torch.zeros((self.num_envs, self.num_dof, self.uan_history_steps, 2), device=self.device, dtype=torch.float)
             self.corrective_torques = torch.zeros((self.num_envs, self.num_dof), device=self.device, dtype=torch.float)
+            self.use_pd_correction = self.cfg["env"].get("usePDCorrection", False)
+            if self.use_pd_correction:
+                self.p_gain_correction = self.corrective_torques.clone()
+                self.d_gain_correction = self.corrective_torques.clone()
             self.uan_model_path = self.cfg["env"]["asset"]["uanModelPath"]
             self.load_uan_model()
-   
+
+        self.arrange_num_envs = torch.arange(self.num_envs)
         if self.viewer != None:
             self._init_camera()
 
@@ -653,11 +660,11 @@ class Duckling(BaseTask):
         foot_contacts = self._contact_forces[:, self._contact_body_ids, 2] > 1.
         
         if self.cfg["task"]["add_obs_latency"]:
-            obs_motors = self.obs_motor_latency_buffer[torch.arange(self.num_envs), :, self.obs_motor_latency_simstep]
+            obs_motors = self.obs_motor_latency_buffer[self.arrange_num_envs, :, self.obs_motor_latency_simstep]
             dof_pos = obs_motors[:, :self.num_actions]
             dof_vel = obs_motors[:, self.num_actions:]
 
-            obs_imu = self.obs_imu_latency_buffer[torch.arange(self.num_envs), :, self.obs_imu_latency_simstep]
+            obs_imu = self.obs_imu_latency_buffer[self.arrange_num_envs, :, self.obs_imu_latency_simstep]
             projected_gravity = obs_imu[:, :3]
             root_ang_vel = obs_imu[:, 3:]
         else:            
@@ -692,38 +699,20 @@ class Duckling(BaseTask):
             obs += (2 * torch.rand_like(obs) - 1) * self.obs_noise_vec
 
         if env_ids is None:
-            mask_envs = self.progress_buf == 0
-            mask_envs_ids = mask_envs.nonzero(as_tuple=False).flatten()
-            self.obs_history[mask_envs_ids, :, :] = obs[mask_envs_ids].unsqueeze(-1).clone()
+            self.obs_history[:,1:,:] = self.obs_history[:,:-1,:].clone()
+            self.obs_history[:,0,:] = obs 
 
-            self.obs_history[:,:,1:] = self.obs_history[:,:,:-1].clone()
-            self.obs_history[:,:,0] = obs 
-
-            obs_history = self.obs_history.permute(0, 2, 1) 
-            action_history = self.action_history.permute(0, 2, 1) 
-
-            # Step 2: For each timestep, concatenate observation and action
-            combined = torch.cat((obs_history, action_history), dim=-1) 
-
-            # Step 3: Flatten the last two dimensions to get a 2D tensor for the MLP
+            combined = torch.cat((self.obs_history, self.action_history), dim=-1) 
             flattened = combined.reshape(self.num_envs, -1) 
             return flattened  
         else:
-            mask_envs = self.progress_buf[env_ids] == 0
-            mask_envs_ids = mask_envs.nonzero(as_tuple=False).flatten()
-            self.obs_history[env_ids][mask_envs_ids, :, :] = obs[mask_envs_ids].unsqueeze(-1).clone()
+            self.obs_history[env_ids,1:, :] = self.obs_history[env_ids,:-1,:].clone()
+            self.obs_history[env_ids,0,:] = obs
 
-            self.obs_history[env_ids,:,1:] = self.obs_history[env_ids,:,:-1].clone()
-            self.obs_history[env_ids,:,0] = obs
+            combined = torch.cat((self.obs_history, self.action_history), dim=-1) 
 
-            obs_history = self.obs_history.permute(0, 2, 1) 
-            action_history = self.action_history.permute(0, 2, 1) 
-
-            # Step 2: For each timestep, concatenate observation and action
-            combined = torch.cat((obs_history, action_history), dim=-1) 
-
-            # Step 3: Flatten the last two dimensions to get a 2D tensor for the MLP
-            flattened = combined.reshape(self.num_envs, -1)
+            combined = torch.cat((self.obs_history, self.action_history), dim=-1) 
+            flattened = combined.reshape(self.num_envs, -1) 
             return flattened[env_ids]
         
     def _reset_actors(self, env_ids):
@@ -737,8 +726,8 @@ class Duckling(BaseTask):
         action_delayed = self.update_action_latency_buffer()
     
         if self.common_step_counter % self._action_history_inputs_decimation == 0:
-            self.action_history[:,:,1:] = self.action_history[:,:,:-1].clone()
-            self.action_history[:,:,0] = action_delayed.clone()
+            self.action_history[:,1:,:] = self.action_history[:,:-1,:].clone()
+            self.action_history[:,0,:] = action_delayed.clone()
         self.actions = action_delayed
     
         self.render()
@@ -748,13 +737,16 @@ class Duckling(BaseTask):
             for i in range(self.num_dof):
                 if self.uan_correction:
                     uan_input = (self.pos_vel_errors[:, i].reshape(-1, self.uan_history_steps*2)).cpu().numpy()
-                    corrective_torques = self.uan_model.infer(uan_input)
-                    self.corrective_torques[:, i] = torch.from_numpy(corrective_torques).to(self.device).squeeze(1)
-
+                    uan_output = self.uan_model.infer(uan_input)
+                    self.corrective_torques[:, i] = uan_output[:, 0]
+                    if self.use_pd_correction:
+                        self.p_gain_correction[:, i] = uan_output[:, 1]
+                        self.d_gain_correction[:, i] = uan_output[:, 2]
+            
             if self.custom_control: # custom position control
                 if self._mask_joint_values is not None:
                     action_delayed[:, self._mask_joint_ids] = self._mask_joint_values
-                self.torques = self.p_gains*(action_delayed*self.power_scale + self._default_dof_pos - self._dof_pos) - (self.d_gains * self._dof_vel)
+                self.torques = (self.p_gains+self.p_gain_correction)*(action_delayed*self.power_scale + self._default_dof_pos - self._dof_pos) - ((self.d_gains+self.d_gain_correction) * self._dof_vel)
                 if self.uan_correction:
                     self.torques += self.corrective_torques
                 if self.randomize_torques:
@@ -790,7 +782,7 @@ class Duckling(BaseTask):
                 target_velocity = (self.actions - self.last_actions) / (self.sim_dt)
                 self.pos_vel_errors[:, :, 1:, :] = self.pos_vel_errors[:, :, :-1, :].clone()
                 self.pos_vel_errors[:, :, 0, 0] = self.actions - self._dof_pos
-                self.pos_vel_errors[:, :, 0, 1] = target_velocity / 10 # TODO: Move velocity error scaling to config.
+                self.pos_vel_errors[:, :, 0, 1] = (target_velocity - self._dof_vel) / 25.0 # TODO: Move velocity error scaling to config.
 
             if self.cfg["task"]["add_obs_latency"]:
                 self.update_obs_latency_buffer()
@@ -973,6 +965,7 @@ class Duckling(BaseTask):
                 self.obs_motor_latency_simstep[env_ids] = int(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt))
 
             if self.cfg["task"]["randomize_obs_imu_latency"]:
+                print(self.obs_imu_latency_simstep)
                 self.obs_imu_latency_simstep[env_ids] = torch.randint(int(self.cfg["task"]["range_obs_imu_latency"][0]/(1000*self.sim_dt)),
                                                         int(self.cfg["task"]["range_obs_imu_latency"][1]/(1000*self.sim_dt))+1, (len(env_ids),),device=self.device)
             else:
@@ -982,7 +975,7 @@ class Duckling(BaseTask):
         if self.cfg["task"]["add_action_latency"]:
             self.action_latency_buffer[:,:,1:] = self.action_latency_buffer[:,:,:(int(self.cfg["task"]["range_action_latency"][1]/(1000*self.sim_dt)))].clone()
             self.action_latency_buffer[:,:,0] = self.actions
-            action_delayed = self.action_latency_buffer[torch.arange(self.num_envs), :, self.action_latency_simstep]
+            action_delayed = self.action_latency_buffer[self.arrange_num_envs, :, self.action_latency_simstep]
         else:
             action_delayed = self.actions
         
@@ -1024,9 +1017,9 @@ def compute_duckling_observations(
             projected_gravity,
             dof_pos,
             dof_vel,
+            local_root_ang_vel,
             foot_contacts,
             # local_root_vel,
-            local_root_ang_vel,
             # local_root_obs,
             # root_height_obs,
         ),

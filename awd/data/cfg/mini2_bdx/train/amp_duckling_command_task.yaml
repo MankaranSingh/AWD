@@ -24,7 +24,7 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [1024, 512, 256]
+      units: [512, 512, 256]
       activation: elu
       d2rl: False
 
@@ -55,7 +55,7 @@ params:
     gamma: 0.95
     tau: 0.95
     learning_rate: 4e-5 # overwritten if adaptive lr_schedule
-    lr_schedule: adaptive # constant
+    lr_schedule: constant # constant
     kl_threshold: 0.008 # target kl for adaptive lr
     score_to_win: 20000
     max_epochs: 100000
@@ -68,7 +68,7 @@ params:
     truncate_grads: False
     ppo: True
     e_clip: 0.2
-    horizon_length: 32
+    horizon_length: 64
     minibatch_size: 16384
     mini_epochs: 6
     critic_coef: 5
@@ -78,7 +78,7 @@ params:
     amp_obs_demo_buffer_size: 200000
     amp_replay_buffer_size: 200000
     amp_replay_keep_prob: 0.01
-    amp_batch_size: 1024
+    amp_batch_size: 2048
     amp_minibatch_size: 4096
     disc_coef: 5
     disc_logit_reg: 0.01

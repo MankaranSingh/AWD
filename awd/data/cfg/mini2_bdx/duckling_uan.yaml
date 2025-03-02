@@ -37,7 +37,10 @@ env:
   generate_num_waves: 100
   
   enable_corrective_torque: True
+  use_pd_gain_correction: False
   uan_history_steps: 20
+  target_dof: 3
+  randomize_target_dof: False
 
   save_num_plots: 20
     
