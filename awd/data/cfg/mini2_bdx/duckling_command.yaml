@@ -19,8 +19,11 @@ env:
   continousPushSteps: 5
   maxPushVelXy: 0.4 # m/s
 
+  randomJointOffsets: True
+  jointOffsetRange: [-1.0, 1.0] # deg
+
   # COM is randomized only once for each actor, but not at each reset
-  randomizeCom: False
+  randomizeCom: True
   comRandomizeRange: [-0.01, 0.01]
   randomizeTorques: False
   torqueMultiplierRange: [0.85, 1.15]
@@ -134,7 +137,7 @@ sim:
 task:
   # custom randomization code for observations (each step)
   observation_randomizations:
-    enable: False
+    enable: True
     dof_pos_noise: 0.01
     dof_vel_noise: 0.5
     ang_vel_noise: 0.2
@@ -153,7 +156,7 @@ task:
   range_action_latency: [5, 5] #ms
   
   # standard isaac envs randomizations.
-  randomize: False
+  randomize: True
   randomization_params:
     frequency: 600   # Define how many environment steps between generating new randomizations
     # observations:
@@ -174,14 +177,14 @@ task:
     actor_params:
       duckling:
         color: True
-        rigid_body_properties:
-          mass: 
-            range: [0.95, 1.15]
-            operation: "scaling"
-            distribution: "uniform"
-            setup_only: True # Property will only be randomized once before simulation is started. See Domain Randomization Documentation for more info.
-            schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 100000
+        # rigid_body_properties:
+          # mass: 
+          #   range: [0.95, 1.15]
+          #   operation: "scaling"
+          #   distribution: "uniform"
+          #   setup_only: True # Property will only be randomized once before simulation is started. See Domain Randomization Documentation for more info.
+          #   schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
+          #   schedule_steps: 100000
         rigid_shape_properties:
           friction:
             num_buckets: 500

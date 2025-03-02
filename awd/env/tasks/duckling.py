@@ -258,6 +258,12 @@ class Duckling(BaseTask):
             self.uan_model_path = self.cfg["env"]["asset"]["uanModelPath"]
             self.load_uan_model()
 
+        self.randomize_joint_offsets = self.cfg["env"].get("randomizeJointOffsets", False)
+        self.random_joint_offset = 0.0
+        if self.randomize_joint_offsets:
+            self.random_joint_offset = torch_rand_float(np.deg2rad(self.cfg["env"]["jointOffsetRange"][0]), 
+                                                        np.deg2rad(self.cfg["env"]["jointOffsetRange"][1]), (self.num_envs, self.num_dof), device=self.device)
+
         self.arrange_num_envs = torch.arange(self.num_envs)
         if self.viewer != None:
             self._init_camera()
@@ -350,6 +356,8 @@ class Duckling(BaseTask):
             self.randomize_torques_factors[env_ids, :] = torch_rand_float(self.torque_multiplier_range[0], self.torque_multiplier_range[1], 
                                                                           (len(env_ids), self.num_actions), device=self.device)
         self._reset_latency_buffer(env_ids)
+        if self.randomize_joint_offsets:
+            self.random_joint_offset[env_ids] = torch_rand_float(self.cfg["env"]["jointOffsetRange"][0], self.cfg["env"]["jointOffsetRange"][1], (len(env_ids), self.num_dof), device=self.device)
         return
 
     def _create_ground_plane(self):
@@ -774,7 +782,8 @@ class Duckling(BaseTask):
             if self.custom_control: # custom position control
                 if self._mask_joint_values is not None:
                     action_delayed[:, self._mask_joint_ids] = self._mask_joint_values
-                self.torques = (self.p_gains+self.p_gain_correction)*(action_delayed*self.power_scale + self._default_dof_pos - self._dof_pos) - ((self.d_gains+self.d_gain_correction) * self._dof_vel)
+                self.torques = (self.p_gains+self.p_gain_correction)*(action_delayed*self.power_scale + (self._default_dof_pos+self.random_joint_offset) \
+                                                                      - self._dof_pos) - ((self.d_gains+self.d_gain_correction) * self._dof_vel)
                 if self.uan_correction:
                     self.torques += self.corrective_torques
                 if self.randomize_torques:
@@ -990,7 +999,7 @@ class Duckling(BaseTask):
             else:
                 self.obs_motor_latency_simstep[env_ids] = self.cfg["task"]["range_obs_motor_latency"][1]
 
-        if self.cfg["task"]["randomize_obs_motor_latency"]:
+        if self.cfg["task"]["randomize_obs_imu_latency"]:
             self.obs_imu_latency_buffer[env_ids, :, :] = 0.0
             if self.cfg["task"]["randomize_obs_imu_latency"]:
                 self.obs_imu_latency_simstep[env_ids] = torch_rand_float(self.cfg["task"]["range_obs_imu_latency"][0],
