@@ -140,11 +140,13 @@ task:
     ang_vel_noise: 0.2
     gravity_noise: 0.05
   
-  add_obs_latency: True
-  randomize_obs_motor_latency: True
-  range_obs_motor_latency: [0, 0] # ms
+  add_motor_obs_latency: False
+  randomize_obs_motor_latency: False
+  range_obs_motor_latency: [5.0, 20.0] # ms
+
+  add_imu_obs_latency: True
   randomize_obs_imu_latency: True
-  range_obs_imu_latency: [5, 20] #ms
+  range_obs_imu_latency: [5.0, 15.0] # ms
   
   add_action_latency: False
   randomize_action_latency: False

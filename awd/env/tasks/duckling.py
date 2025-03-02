@@ -229,12 +229,14 @@ class Duckling(BaseTask):
         if self.add_obs_noise:
             self.obs_noise_vec = self._get_obs_noise_scale_vec(self.cfg["task"]["observation_randomizations"])
 
-        if self.cfg["task"].get("add_obs_latency", False):
-            self.obs_motor_latency_buffer = torch.zeros(self.num_envs, self.num_actions * 2, int(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt))+1,device=self.device)
-            self.obs_imu_latency_buffer = torch.zeros(self.num_envs, 6, int(self.cfg["task"]["range_obs_imu_latency"][1]/(1000*self.sim_dt))+1,device=self.device)
-            
-            self.obs_motor_latency_simstep = torch.zeros(self.num_envs, dtype=torch.long, device=self.device) 
-            self.obs_imu_latency_simstep = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
+        if self.cfg["task"].get("add_motor_obs_latency", False):
+            self.obs_motor_latency_buffer = torch.zeros(self.num_envs, int(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt))+1, self.num_actions * 2, device=self.device)
+            self.obs_motor_timestamps = torch.arange(0, int(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt))+1, device=self.device) * self.sim_dt * 1000
+            self.obs_motor_latency_simstep = torch.zeros(self.num_envs, dtype=torch.float, device=self.device) 
+        if self.cfg["task"].get("add_imu_obs_latency", False):
+            self.obs_imu_latency_buffer = torch.zeros(self.num_envs, int(self.cfg["task"]["range_obs_imu_latency"][1]/(1000*self.sim_dt))+1, 6, device=self.device)
+            self.obs_imu_timestamps = torch.arange(0, int(self.cfg["task"]["range_obs_imu_latency"][1]/(1000*self.sim_dt))+1, device=self.device) * self.sim_dt * 1000
+            self.obs_imu_latency_simstep = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
         
         if self.cfg["task"].get("add_action_latency", False):
             self.action_latency_buffer = torch.zeros(self.num_envs, self.num_actions, (int(self.cfg["task"]["range_action_latency"][1]/(1000*self.sim_dt)))+1,device=self.device)
@@ -656,21 +658,47 @@ class Duckling(BaseTask):
 
         return
 
+    def get_interpolated_obs(self, timstamps, obs_buffer, simstep):
+         # Step 1: Get the index where each simulation time would be inserted to keep timestamps sorted.
+        indices = torch.searchsorted(timstamps, simstep)
+
+        # Clamp indices to valid range (ensuring indices-1 and indices are in-bound)
+        indices = indices.clamp(1, len(timstamps) - 1)
+
+        # Step 2: Get the lower and upper timestamp values.
+        t0 = timstamps[indices - 1]
+        t1 = timstamps[indices]
+
+        # Compute the weight of the upper bound
+        weight = (simstep - t0) / (t1 - t0)
+
+        # Step 3: Retrieve the corresponding buffer values for lower and upper indices.
+        v0 = obs_buffer[self.arrange_num_envs, indices - 1, :]
+        v1 = obs_buffer[self.arrange_num_envs, indices, :]
+
+        # Perform linear interpolation.
+        obs = (1 - weight).unsqueeze(-1) * v0 + weight.unsqueeze(-1) * v1
+        return obs
+
     def _compute_duckling_obs(self, env_ids=None):
         foot_contacts = self._contact_forces[:, self._contact_body_ids, 2] > 1.
         
-        if self.cfg["task"]["add_obs_latency"]:
-            obs_motors = self.obs_motor_latency_buffer[self.arrange_num_envs, :, self.obs_motor_latency_simstep]
+        if self.cfg["task"]["add_motor_obs_latency"]:
+            # Perform linear interpolation.
+            obs_motors = self.get_interpolated_obs(self.obs_motor_timestamps, self.obs_motor_latency_buffer, self.obs_motor_latency_simstep)
             dof_pos = obs_motors[:, :self.num_actions]
             dof_vel = obs_motors[:, self.num_actions:]
-
-            obs_imu = self.obs_imu_latency_buffer[self.arrange_num_envs, :, self.obs_imu_latency_simstep]
-            projected_gravity = obs_imu[:, :3]
-            root_ang_vel = obs_imu[:, 3:]
         else:            
             dof_pos = self._dof_pos
             dof_vel = self._dof_vel
-            
+        
+        if self.cfg["task"]["add_imu_obs_latency"]:
+            # Perform linear interpolation.
+            obs_imu = self.get_interpolated_obs(self.obs_imu_timestamps, self.obs_imu_latency_buffer, self.obs_imu_latency_simstep)
+
+            projected_gravity = obs_imu[:, :3]
+            root_ang_vel = obs_imu[:, 3:]
+        else:
             projected_gravity = self.projected_gravity
             root_ang_vel = self._rigid_body_ang_vel[:, 0, :]
                 
@@ -784,8 +812,7 @@ class Duckling(BaseTask):
                 self.pos_vel_errors[:, :, 0, 0] = self.actions - self._dof_pos
                 self.pos_vel_errors[:, :, 0, 1] = (target_velocity - self._dof_vel) / 25.0 # TODO: Move velocity error scaling to config.
 
-            if self.cfg["task"]["add_obs_latency"]:
-                self.update_obs_latency_buffer()
+            self.update_obs_latency_buffer()
                 
         return
 
@@ -955,25 +982,25 @@ class Duckling(BaseTask):
             else:
                 self.action_latency_simstep[env_ids] = (int(self.cfg["task"]["range_action_latency"][1]/(1000*self.sim_dt)))
                                
-        if self.cfg["task"]["add_obs_latency"]:
+        if self.cfg["task"]["add_motor_obs_latency"]:
             self.obs_motor_latency_buffer[env_ids, :, :] = 0.0
-            self.obs_imu_latency_buffer[env_ids, :, :] = 0.0
             if self.cfg["task"]["randomize_obs_motor_latency"]:
-                self.obs_motor_latency_simstep[env_ids] = torch.randint(int(self.cfg["task"]["range_obs_motor_latency"][0]/(1000*self.sim_dt)),
-                                                        int(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt))+1, (len(env_ids),),device=self.device)
+                self.obs_motor_latency_simstep[env_ids] = torch_rand_float(self.cfg["task"]["range_obs_motor_latency"][0],
+                                                                         self.cfg["task"]["range_obs_motor_latency"][1], (len(env_ids),1), device=self.device).flatten()
             else:
-                self.obs_motor_latency_simstep[env_ids] = int(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt))
+                self.obs_motor_latency_simstep[env_ids] = self.cfg["task"]["range_obs_motor_latency"][1]
 
+        if self.cfg["task"]["randomize_obs_motor_latency"]:
+            self.obs_imu_latency_buffer[env_ids, :, :] = 0.0
             if self.cfg["task"]["randomize_obs_imu_latency"]:
-                print(self.obs_imu_latency_simstep)
-                self.obs_imu_latency_simstep[env_ids] = torch.randint(int(self.cfg["task"]["range_obs_imu_latency"][0]/(1000*self.sim_dt)),
-                                                        int(self.cfg["task"]["range_obs_imu_latency"][1]/(1000*self.sim_dt))+1, (len(env_ids),),device=self.device)
+                self.obs_imu_latency_simstep[env_ids] = torch_rand_float(self.cfg["task"]["range_obs_imu_latency"][0],
+                                                                         self.cfg["task"]["range_obs_imu_latency"][1], (len(env_ids),1), device=self.device).flatten()
             else:
-                self.obs_imu_latency_simstep[env_ids] = int(self.cfg["task"]["range_obs_imu_latency"][1]/(1000*self.sim_dt))
+                self.obs_imu_latency_simstep[env_ids] = self.cfg["task"]["range_obs_imu_latency"][1]
     
     def update_action_latency_buffer(self):
         if self.cfg["task"]["add_action_latency"]:
-            self.action_latency_buffer[:,:,1:] = self.action_latency_buffer[:,:,:(int(self.cfg["task"]["range_action_latency"][1]/(1000*self.sim_dt)))].clone()
+            self.action_latency_buffer[:,:,1:] = self.action_latency_buffer[:,:,:-1].clone()
             self.action_latency_buffer[:,:,0] = self.actions
             action_delayed = self.action_latency_buffer[self.arrange_num_envs, :, self.action_latency_simstep]
         else:
@@ -982,10 +1009,12 @@ class Duckling(BaseTask):
         return action_delayed
 
     def update_obs_latency_buffer(self):
-        self.obs_motor_latency_buffer[:,:,1:] = self.obs_motor_latency_buffer[:,:,:int(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt))].clone()
-        self.obs_motor_latency_buffer[:,:,0] = torch.cat((self._dof_pos, self._dof_vel), 1).clone()
-        self.obs_imu_latency_buffer[:,:,1:] = self.obs_imu_latency_buffer[:,:,:int(self.cfg["task"]["range_obs_imu_latency"][1]/(1000*self.sim_dt))].clone()
-        self.obs_imu_latency_buffer[:,:,0] = torch.cat((self.projected_gravity, self._rigid_body_ang_vel[:, 0, :]), 1).clone()
+        if self.cfg["task"]["add_motor_obs_latency"]:
+            self.obs_motor_latency_buffer[:,1:,:] = self.obs_motor_latency_buffer[:,:-1,:].clone()
+            self.obs_motor_latency_buffer[:,0,:] = torch.cat((self._dof_pos, self._dof_vel), 1).clone()
+        if self.cfg["task"]["add_imu_obs_latency"]:
+            self.obs_imu_latency_buffer[:,1:,:] = self.obs_imu_latency_buffer[:,:-1,:].clone()
+            self.obs_imu_latency_buffer[:,0,:] = torch.cat((self.projected_gravity, self._rigid_body_ang_vel[:, 0, :]), 1).clone()
 
 
 @torch.jit.script
