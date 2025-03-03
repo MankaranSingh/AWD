@@ -46,6 +46,7 @@ from rl_games.torch_runner import Runner
 import numpy as np
 import copy
 import torch
+import onnxruntime as ort
 
 from learning import amp_agent
 from learning import amp_players
@@ -312,7 +313,7 @@ def main():
     player.restore(cfg["args"].checkpoint)
 
     inputs = {
-        "obs": torch.zeros((1,) + player.obs_shape).to(player.device),
+        "obs": torch.randn((1,) + player.obs_shape).to(player.device),
     }
 
     with torch.no_grad():
@@ -324,8 +325,7 @@ def main():
         traced = torch.jit.trace(
             adapter, adapter.flattened_inputs, check_trace=False
         )
-        flattened_outputs = traced(*adapter.flattened_inputs)
-        print(flattened_outputs)
+        torch_outputs = traced(*adapter.flattened_inputs)
 
     # torch.jit.save(traced, "TEST.pt")
     # print("SAVE TO TEST.pt")
@@ -337,9 +337,18 @@ def main():
         verbose=True,
         input_names=["obs"],
         output_names=["actions"],
-        dynamic_axes={'obs': {0: 'batch_size'}},
+        dynamic_axes={'obs': {0: 'batch_size'}}
     )
     print(f"saved to {model_path_out}")
+    print("testing model for consistency with trorch")
+
+    ort_session = ort.InferenceSession(model_path_out, providers=["CPUExecutionProvider"])
+    onnx_output = ort_session.run(None, {'obs': inputs["obs"].cpu().numpy().astype(np.float32)})[0]
+
+    torch_output_np = torch_outputs[0].cpu().numpy()
+    np.testing.assert_allclose(torch_output_np, onnx_output, atol=1e-5)
+
+    print("ONNX and PyTorch outputs match within tolerance.")
 
     return
 
