@@ -7,10 +7,10 @@ env:
   enableDebugVis: False
   
   pdControl: False
-  powerScale: 1.5
+  powerScale: 1.0
   controlFrequencyInv: 2 # 50 Hz
   stateInit: "Hybrid"
-  hybridInitProb: 1.0
+  hybridInitProb: 0.0
   numAMPObsSteps: 10
 
   pushRobots: True
@@ -25,7 +25,7 @@ env:
   # COM is randomized only once for each actor, but not at each reset
   randomizeCom: True
   comRandomizeRange: [-0.01, 0.01]
-  randomizeTorques: False
+  randomizeTorques: True
   torqueMultiplierRange: [0.85, 1.15]
 
   customControl: True
@@ -44,9 +44,9 @@ env:
   commandChangeStepsMax: 60 #s
   period: 0.66 #s
 
-  actionHistoryInputs: 2
+  actionHistoryInputs: 3
   actionHistoryInputsDecimation: 1
-  obsHistoryInputs: 2
+  obsHistoryInputs: 1
   obsHistoryInputsDecimation: 1
 
   useUANCorrection: True
@@ -69,7 +69,7 @@ env:
     angularVelocityZRewardScale: 1.0
     torqueRewardScale: -0.000
     feetAirTimeRewardScale: 0.05
-    actionRateRewardScale: -0.01
+    actionRateRewardScale: -0.001
     standStillRewardScale: -0.0
     footSlideRewardScale: -0.0005
 
@@ -84,9 +84,9 @@ env:
   #   yaw: [0., 0.]          # min max [rad/s]
 
   randomCommandVelocityRanges:
-    linear_x: [-0.5, 0.5] # min max [m/s]
-    linear_y: [-0.4, 0.4]   # min max [m/s]
-    yaw: [-0.8, 0.8]          # min max [rad/s]
+    linear_x: [-0.3, 0.3] # min max [m/s]
+    linear_y: [-0.3, 0.3]   # min max [m/s]
+    yaw: [-0.3, 0.3]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh

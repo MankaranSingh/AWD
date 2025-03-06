@@ -738,16 +738,14 @@ class Duckling(BaseTask):
             self.obs_history[:,1:,:] = self.obs_history[:,:-1,:].clone()
             self.obs_history[:,0,:] = obs 
 
-            combined = torch.cat((self.obs_history, self.action_history), dim=-1) 
+            combined = torch.cat((self.obs_history.reshape(self.num_envs, -1), self.action_history.reshape(self.num_envs, -1)), dim=1) 
             flattened = combined.reshape(self.num_envs, -1) 
             return flattened  
         else:
             self.obs_history[env_ids,1:, :] = self.obs_history[env_ids,:-1,:].clone()
             self.obs_history[env_ids,0,:] = obs
 
-            combined = torch.cat((self.obs_history, self.action_history), dim=-1) 
-
-            combined = torch.cat((self.obs_history, self.action_history), dim=-1) 
+            combined = torch.cat((self.obs_history.reshape(self.num_envs, -1), self.action_history.reshape(self.num_envs, -1)), dim=1) 
             flattened = combined.reshape(self.num_envs, -1) 
             return flattened[env_ids]
         
@@ -1049,6 +1047,9 @@ def compute_duckling_observations(
     heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
     # local_root_vel = quat_rotate(heading_rot, root_vel)
     local_root_ang_vel = quat_rotate(heading_rot, root_ang_vel)
+
+    dof_vel = torch.clamp(dof_vel, -5.0, 5.0)
+    local_root_ang_vel = torch.clamp(local_root_ang_vel, -5.0, 5.0)
     
     obs = torch.cat(
         (
