@@ -1,10 +1,18 @@
+ROS=False
+
 import torch
+import threading
+import numpy as np
+
+if ROS:
+    import rospy
+    from sensor_msgs.msg import Imu, JointState
+    from std_msgs.msg import Int32
 
 import env.tasks.duckling_amp_task as duckling_amp_task
 from isaacgym.torch_utils import *
+from utils import torch_utils
 
-TAR_ACTOR_ID = 1
-TAR_FACING_ACTOR_ID = 2
 
 class DucklingCommand(duckling_amp_task.DucklingAMPTask):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
@@ -70,7 +78,113 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.commands_scale = torch.tensor([self.lin_vel_scale[0], self.lin_vel_scale[1], self.ang_vel_scale], requires_grad=False, device=self.commands.device)
         self.default_dof_pos = torch.zeros_like(self.dof_pos, dtype=torch.float, device=self.device, requires_grad=False)
         
+        if ROS:
+            # Initialize ROS node in a separate thread
+            self.ros_thread = None
+            self.ros_running = False
+            self.ros_publish_rate = cfg.get("ros_publish_rate", 100)  # Hz
+            
+            # Initialize target joint positions for ROS control
+            self.target_joint_pos_external = torch.zeros_like(self.dof_pos[0], dtype=torch.float, device=self.device)
+            self.use_ros_control = True
+            
+            # Start ROS thread once everything is initialized
+            self._start_ros_thread()
         return
+
+    def _start_ros_thread(self):
+        """Start the ROS thread in a non-blocking way"""
+        self.rospy = rospy
+        self.Imu = Imu
+        self.JointState = JointState
+        self.Int32 = Int32
+        
+        # Initialize the ROS node
+        rospy.init_node('duckling_sim', anonymous=True, disable_signals=True)
+        
+        # Create publishers
+        self.imu_pub = rospy.Publisher('/imu/data', Imu, queue_size=1)
+        self.foot_contacts_pub = rospy.Publisher('/feet_switch', Int32, queue_size=1)
+        self.joint_state_pub = rospy.Publisher('/current_joint_states', JointState, queue_size=1)
+        
+        # Create subscriber for target joint states
+        self.joint_target_sub = rospy.Subscriber('/target_joint_states', JointState, self._target_joint_states_callback, queue_size=1)
+        
+        # Start the thread
+        self.ros_running = True
+        self.ros_thread = threading.Thread(target=self._ros_publish_loop)
+        self.ros_thread.daemon = True
+        self.ros_thread.start()        
+        print("ROS node started successfully.")
+    
+    def _target_joint_states_callback(self, msg):
+        """Callback for receiving target joint states"""
+        for i, name in enumerate(msg.name):
+            self.target_joint_pos_external[i] = msg.position[i]
+        self.target_joint_pos_external -= self._initial_dof_pos[0]
+        self.target_joint_pos_external /= self.power_scale
+                
+    def _ros_publish_loop(self):
+        """Main loop for publishing ROS messages"""
+        rate = self.rospy.Rate(self.ros_publish_rate)
+        
+        while self.ros_running and not self.rospy.is_shutdown():
+            try:
+                self._publish_ros_messages()
+                rate.sleep()
+            except Exception as e:
+                print(f"Error in ROS publish loop: {e}")
+                break
+    
+    def _publish_ros_messages(self):
+        """Publish all ROS messages"""
+        # Get first environment's data (for single robot case)
+        now = self.rospy.Time.now()
+        
+        # Publish IMU data
+        imu_msg = self.Imu()
+        imu_msg.header.stamp = now
+        imu_msg.header.frame_id = "base_link"
+        
+        # Convert quaternion to ROS format (x, y, z, w)
+        quat = self._duckling_root_states[0, 3:7].cpu().numpy()
+        imu_msg.orientation.x = float(quat[0])
+        imu_msg.orientation.y = float(quat[1])
+        imu_msg.orientation.z = float(quat[2])
+        imu_msg.orientation.w = float(quat[3])
+        
+        # Angular velocities
+        root_ang_vel = self._rigid_body_ang_vel[:, 0]
+        root_rot = self._duckling_root_states[:, 3:7]
+        heading_rot = torch_utils.calc_heading_quat_inv(root_rot)
+        local_root_ang_vel = quat_rotate(heading_rot, root_ang_vel)[0].cpu().numpy()
+
+        imu_msg.angular_velocity.x = float(local_root_ang_vel[0])
+        imu_msg.angular_velocity.y = float(local_root_ang_vel[1])
+        imu_msg.angular_velocity.z = float(local_root_ang_vel[2])
+        
+        self.imu_pub.publish(imu_msg)
+        
+        # Publish foot contacts as a single Int32
+        contact_forces = self._contact_forces[0, self._contact_body_ids, 2].cpu().numpy()
+        # Simple encoding: bit 0 = right foot, bit 1 = left foot
+        right_foot_contact = int(contact_forces[0] > 1.0)
+        left_foot_contact = int(contact_forces[1] > 1.0)
+        contact_state = (1 if left_foot_contact else 0) | ((1 if right_foot_contact else 0) << 1)
+        self.foot_contacts_pub.publish(self.Int32(contact_state))
+        
+        # Publish joint states
+        joint_state_msg = self.JointState()
+        joint_state_msg.header.stamp = now
+        
+        # Add joint names
+        joint_state_msg.name = self.dof_names
+        
+        # Add joint positions and velocities
+        joint_state_msg.position = self._dof_pos[0].cpu().numpy().tolist()
+        joint_state_msg.velocity = self._dof_vel[0].cpu().numpy().tolist()
+                
+        self.joint_state_pub.publish(joint_state_msg)
 
     def get_task_obs_size(self):
         obs_size = 0
@@ -79,6 +193,13 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         return obs_size
 
     def pre_physics_step(self, actions):
+        if ROS:
+            # Check if we should use ROS joint targets instead of policy actions
+            if self.use_ros_control:
+                # Replace actions with the target joint positions from ROS
+                actions = self.target_joint_pos_external.unsqueeze(0).clone().repeat(self.num_envs, 1)
+        
+        # Continue with normal control
         super().pre_physics_step(actions)
         return
     
@@ -162,6 +283,22 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.episode_reward_sums["standstill"] += rew_standstill
         self.episode_reward_sums["foot_slide"] += foot_slide_reward
         return
+
+    def close(self):
+        # Cleanup ROS resources
+        self.ros_running = False
+        if self.ros_thread:
+            self.ros_thread.join(timeout=1.0)
+        
+        if hasattr(self, 'rospy') and self.rospy is not None:
+            try:
+                self.rospy.signal_shutdown("Simulation ended")
+            except:
+                pass
+        
+        # Call parent's close method if it exists
+        if hasattr(super(), 'close'):
+            super().close()
 
 #####################################################################
 ###=========================jit functions=========================###
