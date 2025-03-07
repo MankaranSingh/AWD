@@ -7,7 +7,7 @@ env:
   enableDebugVis: False
   
   pdControl: False
-  powerScale: 1.0
+  powerScale: 1.5
   controlFrequencyInv: 2 # 50 Hz
   stateInit: "Hybrid"
   hybridInitProb: 0.0
@@ -20,7 +20,7 @@ env:
   maxPushVelXy: 0.4 # m/s
 
   randomJointOffsets: True
-  jointOffsetRange: [-1.0, 1.0] # deg
+  jointOffsetRange: [-2.0, 2.0] # deg
 
   # COM is randomized only once for each actor, but not at each reset
   randomizeCom: True
@@ -54,7 +54,7 @@ env:
   uan_history_steps: 20
 
   asset:
-    uanModelPath: "output/UAN_data/uan_model_no_pd.onnx"
+    uanModelPath: "output/UAN_data/uan_model_low_vel.onnx"
     assetRoot: "awd/data/assets"
     assetFileName: "mini2_bdx/mini2_bdx.urdf"
 
@@ -143,17 +143,17 @@ task:
     ang_vel_noise: 0.2
     gravity_noise: 0.05
   
-  add_motor_obs_latency: False
-  randomize_obs_motor_latency: False
-  range_obs_motor_latency: [5.0, 20.0] # ms
+  add_motor_obs_latency: True
+  randomize_obs_motor_latency: True
+  range_obs_motor_latency: [0.0, 15.0] # ms
 
   add_imu_obs_latency: True
   randomize_obs_imu_latency: True
-  range_obs_imu_latency: [5.0, 15.0] # ms
+  range_obs_imu_latency: [0.0, 15.0] # ms
   
   add_action_latency: False
   randomize_action_latency: False
-  range_action_latency: [5, 5] #ms
+  range_action_latency: [0, 10] #ms
   
   # standard isaac envs randomizations.
   randomize: True
