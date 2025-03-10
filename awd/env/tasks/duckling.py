@@ -607,7 +607,7 @@ class Duckling(BaseTask):
         dof_prop = self.gym.get_asset_dof_properties(duckling_asset)
         if self.custom_control or (not self._pd_control):
             dof_prop["driveMode"] = gymapi.DOF_MODE_EFFORT
-            props_to_set = ["friction", "armature", "velocity", "effort"]
+            props_to_set = ["friction", "armature", "velocity", "effort", "damping"]
             if not self.custom_control:
                 props_to_set += ["stiffness", "damping"]
         else:

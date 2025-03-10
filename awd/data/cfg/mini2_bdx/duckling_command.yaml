@@ -40,8 +40,8 @@ env:
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
-  commandChangeStepsMin: 5 #s
-  commandChangeStepsMax: 6 #s
+  commandChangeStepsMin: 50 #s
+  commandChangeStepsMax: 60 #s
   period: 0.66 #s
 
   actionHistoryInputs: 3
@@ -67,9 +67,9 @@ env:
     # rewards
     linearVelocityXYRewardScale: [2.0, 2.0]
     angularVelocityZRewardScale: 1.0
-    torqueRewardScale: -0.002
+    torqueRewardScale: -0.001
     feetAirTimeRewardScale: 0.05
-    actionRateRewardScale: -0.5
+    actionRateRewardScale: -1.5
     standStillRewardScale: -0.0
     footSlideRewardScale: -0.0005
 
@@ -86,7 +86,7 @@ env:
   randomCommandVelocityRanges:
     linear_x: [-0.5, 0.5] # min max [m/s]
     linear_y: [-0.3, 0.3]   # min max [m/s]
-    yaw: [-0.7, 0.7]          # min max [rad/s]
+    yaw: [-1.0, 1.0]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
@@ -192,22 +192,23 @@ task:
             operation: "scaling"
             distribution: "uniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
-            schedule_steps: 100000
+            schedule_steps: 1000
           restitution:
             range: [0., 0.5]
             operation: "scaling"
             distribution: "uniform"
-            schedule_steps: 100000
-        # dof_properties:
-        #   damping: 
-        #     range: [0.8, 1.2]
-        #     operation: "scaling"
-        #     distribution: "uniform"
-            
-        #   stiffness: 
-        #     range: [0.8, 1.2]
-        #     operation: "scaling"
-        #     distribution: "uniform"
+            schedule_steps: 1000
+        dof_properties:
+          damping: 
+            range: [0.8, 1.2]
+            operation: "scaling"
+            distribution: "uniform"
+            schedule_steps: 1000
+          stiffness: 
+            range: [0.8, 1.2]
+            operation: "scaling"
+            distribution: "uniform"
+            schedule_steps: 1000
             
           # lower:
           #   range: [0, 0.01]
