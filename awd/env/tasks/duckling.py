@@ -239,7 +239,7 @@ class Duckling(BaseTask):
             self.obs_imu_latency_simstep = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
         
         if self.cfg["task"].get("add_action_latency", False):
-            self.action_latency_buffer = torch.zeros(self.num_envs, self.num_actions, int(np.ceil(self.cfg["task"]["range_action_latency"][1]/(1000*self.sim_dt)))+1,device=self.device)
+            self.action_latency_buffer = torch.zeros(self.num_envs, int(np.ceil(self.cfg["task"]["range_action_latency"][1]/(1000*self.sim_dt)))+1, self.num_actions,device=self.device)
             self.action_latency_simstep = torch.zeros(self.num_envs, dtype=torch.long, device=self.device) 
         
         self._reset_latency_buffer(torch.arange(self.num_envs, device=self.device))
@@ -716,7 +716,7 @@ class Duckling(BaseTask):
                                                 self._rigid_body_rot[:, 0, :],
                                                 self._rigid_body_vel[:, 0, :],
                                                 root_ang_vel,
-                                                dof_pos, dof_vel, key_body_pos,
+                                                dof_pos-self._default_dof_pos, dof_vel, key_body_pos,
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
                                                 projected_gravity, foot_contacts)
@@ -726,7 +726,7 @@ class Duckling(BaseTask):
                                                 self._rigid_body_rot[env_ids][:, 0, :],
                                                 self._rigid_body_vel[env_ids][:, 0, :],
                                                 root_ang_vel[env_ids],
-                                                dof_pos[env_ids], dof_vel[env_ids], key_body_pos[env_ids],
+                                                (dof_pos-self._default_dof_pos)[env_ids], dof_vel[env_ids], key_body_pos[env_ids],
                                                 self._local_root_obs, self._root_height_obs, 
                                                 self._dof_obs_size, self._dof_offsets, self._dof_axis_array, 
                                                 projected_gravity[env_ids], foot_contacts[env_ids])
@@ -760,12 +760,23 @@ class Duckling(BaseTask):
     
         if self.common_step_counter % self._action_history_inputs_decimation == 0:
             self.action_history[:,1:,:] = self.action_history[:,:-1,:].clone()
-            self.action_history[:,0,:] = self.actions
+            self.action_history[:,0,:] = self.actions.clone()
     
         self.render()
-        for _ in range(self.control_freq_inv):
-            # control strategy
-            action_delayed = self.update_action_latency_buffer()
+            # Low-pass filter parameters
+        cutoff = 37.5  # cutoff frequency in Hz
+        dt = self.sim_dt  # simulation timestep
+        RC = 1.0 / (2 * np.pi * cutoff)
+        lpf_alpha = dt / (RC + dt)
+
+        # Initialize filtered_action with the previous actions
+        filtered_action = self.last_actions.clone()
+
+        # Iterate over control substeps
+        for substep in range(self.control_freq_inv):
+            # Update the filtered action using the low-pass filter equation
+            filtered_action = filtered_action + lpf_alpha * (self.actions - filtered_action)
+            action_delayed = self.update_action_latency_buffer(filtered_action)
 
             for i in range(self.num_dof):
                 if self.uan_correction:
@@ -995,7 +1006,7 @@ class Duckling(BaseTask):
                                                                          self.cfg["task"]["range_obs_motor_latency"][1], (len(env_ids),1), device=self.device).flatten()
             else:
                 self.obs_motor_latency_simstep[env_ids] = self.cfg["task"]["range_obs_motor_latency"][1]
-
+            
         if self.cfg["task"]["randomize_obs_imu_latency"]:
             self.obs_imu_latency_buffer[env_ids, :, :] = 0.0
             if self.cfg["task"]["randomize_obs_imu_latency"]:
@@ -1004,13 +1015,13 @@ class Duckling(BaseTask):
             else:
                 self.obs_imu_latency_simstep[env_ids] = self.cfg["task"]["range_obs_imu_latency"][1]
     
-    def update_action_latency_buffer(self):
+    def update_action_latency_buffer(self, current_action):
         if self.cfg["task"]["add_action_latency"]:
-            self.action_latency_buffer[:,:,1:] = self.action_latency_buffer[:,:,:-1].clone()
-            self.action_latency_buffer[:,:,0] = self.actions
-            action_delayed = self.action_latency_buffer[self.arrange_num_envs, :, self.action_latency_simstep]
+            self.action_latency_buffer[:,1:,:] = self.action_latency_buffer[:,:-1,:].clone()
+            self.action_latency_buffer[:,0,:] = current_action
+            action_delayed = self.action_latency_buffer[self.arrange_num_envs, self.action_latency_simstep, :]
         else:
-            action_delayed = self.actions
+            action_delayed = current_action
         
         return action_delayed
 

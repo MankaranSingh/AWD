@@ -24,8 +24,8 @@ params:
         learn_sigma: False
 
     mlp:
-      units: [512, 512, 256]
-      activation: elu
+      units: [512, 256, 128]
+      activation: relu
       d2rl: False
 
       initializer:
@@ -55,7 +55,7 @@ params:
     gamma: 0.95
     tau: 0.95
     learning_rate: 4e-5 # overwritten if adaptive lr_schedule
-    lr_schedule: constant # constant
+    lr_schedule: adaptive # constant
     kl_threshold: 0.008 # target kl for adaptive lr
     score_to_win: 20000
     max_epochs: 100000
@@ -88,5 +88,5 @@ params:
     normalize_amp_input: True
     enable_eps_greedy: False
 
-    task_reward_w: 0.47
-    disc_reward_w: 0.53
+    task_reward_w: 0.5
+    disc_reward_w: 0.5

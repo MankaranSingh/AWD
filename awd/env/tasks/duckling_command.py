@@ -98,6 +98,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.Imu = Imu
         self.JointState = JointState
         self.Int32 = Int32
+        self.tcp_nodelay = True
         
         # Initialize the ROS node
         rospy.init_node('duckling_sim', anonymous=True, disable_signals=True)
@@ -108,7 +109,7 @@ class DucklingCommand(duckling_amp_task.DucklingAMPTask):
         self.joint_state_pub = rospy.Publisher('/current_joint_states', JointState, queue_size=1)
         
         # Create subscriber for target joint states
-        self.joint_target_sub = rospy.Subscriber('/target_joint_states', JointState, self._target_joint_states_callback, queue_size=1)
+        self.joint_target_sub = rospy.Subscriber('/target_joint_states', JointState, self._target_joint_states_callback, queue_size=1, tcp_nodelay=self.tcp_nodelay)
         
         # Start the thread
         self.ros_running = True

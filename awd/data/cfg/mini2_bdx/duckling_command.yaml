@@ -7,17 +7,17 @@ env:
   enableDebugVis: False
   
   pdControl: False
-  powerScale: 1.5
-  controlFrequencyInv: 2 # 50 Hz
+  powerScale: 1.0
+  controlFrequencyInv: 5 # 50 Hz
   stateInit: "Hybrid"
-  hybridInitProb: 0.0
+  hybridInitProb: 0.5
   numAMPObsSteps: 10
 
   pushRobots: True
   pushStep: 3 #s
   pushStepRandomRange: 1 #s | push works at pushStep +- pushStepRandomRange
   continousPushSteps: 5
-  maxPushVelXy: 0.4 # m/s
+  maxPushVelXy: 0.3 # m/s
 
   randomJointOffsets: True
   jointOffsetRange: [-2.0, 2.0] # deg
@@ -40,16 +40,16 @@ env:
   enableEarlyTermination: True
   enableTaskObs: True
   randomizeMaskJoints: False
-  commandChangeStepsMin: 50 #s
-  commandChangeStepsMax: 60 #s
+  commandChangeStepsMin: 5 #s
+  commandChangeStepsMax: 6 #s
   period: 0.66 #s
 
   actionHistoryInputs: 3
   actionHistoryInputsDecimation: 1
-  obsHistoryInputs: 1
+  obsHistoryInputs: 3
   obsHistoryInputsDecimation: 1
 
-  useUANCorrection: True
+  useUANCorrection: False
   use_pd_correction: False
   uan_history_steps: 20
 
@@ -67,9 +67,9 @@ env:
     # rewards
     linearVelocityXYRewardScale: [2.0, 2.0]
     angularVelocityZRewardScale: 1.0
-    torqueRewardScale: -0.000
+    torqueRewardScale: -0.002
     feetAirTimeRewardScale: 0.05
-    actionRateRewardScale: -0.001
+    actionRateRewardScale: -3.5
     standStillRewardScale: -0.0
     footSlideRewardScale: -0.0005
 
@@ -84,9 +84,9 @@ env:
   #   yaw: [0., 0.]          # min max [rad/s]
 
   randomCommandVelocityRanges:
-    linear_x: [-0.3, 0.3] # min max [m/s]
+    linear_x: [-0.5, 0.5] # min max [m/s]
     linear_y: [-0.3, 0.3]   # min max [m/s]
-    yaw: [-0.3, 0.3]          # min max [rad/s]
+    yaw: [-0.7, 0.7]          # min max [rad/s]
   
   terrain:
     terrainType: plane # plane, or trimesh
@@ -151,8 +151,8 @@ task:
   randomize_obs_imu_latency: True
   range_obs_imu_latency: [0.0, 15.0] # ms
   
-  add_action_latency: False
-  randomize_action_latency: False
+  add_action_latency: True
+  randomize_action_latency: True
   range_action_latency: [0, 10] #ms
   
   # standard isaac envs randomizations.

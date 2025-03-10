@@ -73,6 +73,6 @@ def parse_task(args, cfg, cfg_train, sim_params):
     except NameError as e:
         print(e)
         warn_task_name()
-    env = VecTaskPythonWrapper(task, rl_device, cfg_train.get("clip_observations", np.inf), cfg_train.get("clip_actions", 5.0))
+    env = VecTaskPythonWrapper(task, rl_device, cfg_train.get("clip_observations", 5.0), cfg_train.get("clip_actions", 1.5))
 
     return task, env
