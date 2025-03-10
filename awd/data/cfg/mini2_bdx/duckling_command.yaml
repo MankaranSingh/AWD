@@ -69,7 +69,7 @@ env:
     angularVelocityZRewardScale: 1.0
     torqueRewardScale: -0.002
     feetAirTimeRewardScale: 0.05
-    actionRateRewardScale: -3.5
+    actionRateRewardScale: -0.5
     standStillRewardScale: -0.0
     footSlideRewardScale: -0.0005
 
