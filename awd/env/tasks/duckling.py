@@ -196,6 +196,8 @@ class Duckling(BaseTask):
         self.last_contacts = torch.zeros(self.num_envs, len(self._key_body_ids), dtype=torch.bool, device=self.device, requires_grad=False)
         self.feet_air_time = torch.zeros(self.num_envs, self._key_body_ids.shape[0], dtype=torch.float, device=self.device, requires_grad=False)
         self.actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
+        self.target_positions = torch.zeros(self.num_envs, self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
+        self.prev_target_positions = torch.zeros(self.num_envs, self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
         self.last_actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
 
         self.period = self.cfg["env"].get("period", 0.6)
@@ -223,14 +225,14 @@ class Duckling(BaseTask):
         self.randomize_torques = self.cfg["env"].get("randomizeTorques", False)
         self.torque_multiplier_range = self.cfg["env"].get("torqueMultiplierRange", [0.85, 1.15])
         if self.randomize_torques:
-            self.randomize_torques_factors = torch.ones(self.num_envs, self.num_actions, device=self.device)
+            self.randomize_torques_factors = torch.ones(self.num_envs, self.num_dof, device=self.device)
         
         self.add_obs_noise = self.cfg["task"].get("observation_randomizations", {}).get("enable", False)
         if self.add_obs_noise:
             self.obs_noise_vec = self._get_obs_noise_scale_vec(self.cfg["task"]["observation_randomizations"])
 
         if self.cfg["task"].get("add_motor_obs_latency", False):
-            self.obs_motor_latency_buffer = torch.zeros(self.num_envs, int(np.ceil(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt)))+1, self.num_actions * 2, device=self.device)
+            self.obs_motor_latency_buffer = torch.zeros(self.num_envs, int(np.ceil(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt)))+1, self.num_dof * 2, device=self.device)
             self.obs_motor_timestamps = torch.arange(0, int(np.ceil(self.cfg["task"]["range_obs_motor_latency"][1]/(1000*self.sim_dt)))+1, device=self.device) * self.sim_dt * 1000
             self.obs_motor_latency_simstep = torch.zeros(self.num_envs, dtype=torch.float, device=self.device) 
         if self.cfg["task"].get("add_imu_obs_latency", False):
@@ -354,7 +356,7 @@ class Duckling(BaseTask):
             self._push_vels = torch_rand_float(-self.max_push_vel, self.max_push_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
         if self.randomize_torques:
             self.randomize_torques_factors[env_ids, :] = torch_rand_float(self.torque_multiplier_range[0], self.torque_multiplier_range[1], 
-                                                                          (len(env_ids), self.num_actions), device=self.device)
+                                                                          (len(env_ids), self.num_dof), device=self.device)
         self._reset_latency_buffer(env_ids)
         if self.randomize_joint_offsets:
             self.random_joint_offset[env_ids] = torch_rand_float(self.cfg["env"]["jointOffsetRange"][0], self.cfg["env"]["jointOffsetRange"][1], (len(env_ids), self.num_dof), device=self.device)
@@ -571,6 +573,7 @@ class Duckling(BaseTask):
                     self.randomize_com_values[i, 1],
                     self.randomize_com_values[i, 2],
                 )
+                body_props[0].mass += np.random.uniform(-0.2, 0.2) # TODO: add to config
                 self.gym.set_actor_rigid_body_properties(
                     self.envs[i],
                     self.duckling_handles[i],
@@ -607,7 +610,7 @@ class Duckling(BaseTask):
         dof_prop = self.gym.get_asset_dof_properties(duckling_asset)
         if self.custom_control or (not self._pd_control):
             dof_prop["driveMode"] = gymapi.DOF_MODE_EFFORT
-            props_to_set = ["friction", "armature", "velocity", "effort", "damping"]
+            props_to_set = ["friction", "armature", "velocity", "effort"]
             if not self.custom_control:
                 props_to_set += ["stiffness", "damping"]
         else:
@@ -694,8 +697,8 @@ class Duckling(BaseTask):
         if self.cfg["task"].get("add_motor_obs_latency", False):
             # Perform linear interpolation.
             obs_motors = self.get_interpolated_obs(self.obs_motor_timestamps, self.obs_motor_latency_buffer, self.obs_motor_latency_simstep)
-            dof_pos = obs_motors[:, :self.num_actions]
-            dof_vel = obs_motors[:, self.num_actions:]
+            dof_pos = obs_motors[:, :self.num_dof]
+            dof_vel = obs_motors[:, self.num_dof:]
         else:            
             dof_pos = self._dof_pos
             dof_vel = self._dof_vel
@@ -777,9 +780,9 @@ class Duckling(BaseTask):
             # Update the filtered action using the low-pass filter equation
             filtered_action = filtered_action + lpf_alpha * (self.actions - filtered_action)
             action_delayed = self.update_action_latency_buffer(filtered_action)
-
-            for i in range(self.num_dof):
-                if self.uan_correction:
+            
+            if self.uan_correction:
+                for i in self._joint_ids:
                     uan_input = (self.pos_vel_errors[:, i].reshape(-1, self.uan_history_steps*2)).cpu().numpy()
                     uan_output = self.uan_model.infer(uan_input)
                     self.corrective_torques[:, i] = uan_output[:, 0]
@@ -788,10 +791,11 @@ class Duckling(BaseTask):
                         self.d_gain_correction[:, i] = uan_output[:, 2]
             
             if self.custom_control: # custom position control
+                self.target_positions[:, self._joint_ids] = action_delayed*self.power_scale 
+                self.target_positions += self._default_dof_pos + self.random_joint_offset
                 if self._mask_joint_values is not None:
-                    action_delayed[:, self._mask_joint_ids] = self._mask_joint_values
-                self.torques = (self.p_gains+self.p_gain_correction)*(action_delayed*self.power_scale + (self._default_dof_pos+self.random_joint_offset) \
-                                                                      - self._dof_pos) - ((self.d_gains+self.d_gain_correction) * self._dof_vel)
+                    self.target_positions[:, self._mask_joint_ids] = self._mask_joint_values
+                self.torques = (self.p_gains+self.p_gain_correction)*(self.target_positions - self._dof_pos) - ((self.d_gains+self.d_gain_correction) * self._dof_vel)
                 if self.uan_correction:
                     self.torques += self.corrective_torques
                 if self.randomize_torques:
@@ -799,10 +803,11 @@ class Duckling(BaseTask):
                 self.torques = torch.clip(self.torques, -self.max_efforts, self.max_efforts)
                 self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
             elif (self._pd_control): # isaac based position contol
-                pd_tar = action_delayed*self.power_scale + self._default_dof_pos
+                self.target_positions[:, self._joint_ids] = action_delayed*self.power_scale 
+                self.target_positions += + self._default_dof_pos[:, self._joint_ids] + self.random_joint_offset
                 if self._mask_joint_values is not None:
-                    pd_tar[:, self._mask_joint_ids] = self._mask_joint_values
-                pd_tar_tensor = gymtorch.unwrap_tensor(pd_tar)
+                    self.target_positions[:, self._mask_joint_ids] = self._mask_joint_values
+                pd_tar_tensor = gymtorch.unwrap_tensor(self.target_positions)
                 self.gym.set_dof_position_target_tensor(self.sim, pd_tar_tensor)
             else: # isaac based torque control
                 forces = action_delayed * self.motor_efforts.unsqueeze(0) * self.power_scale
@@ -824,11 +829,12 @@ class Duckling(BaseTask):
             self.projected_gravity = quat_rotate_inverse(self._duckling_root_states[:, 3:7], self.gravity_vec) # update imu at simulation freq.
 
             if self.uan_correction:
-                target_velocity = ((self.actions - self.last_actions)*self.power_scale) / (self.sim_dt)
+                target_velocity = (self.target_positions - self.prev_target_positions) / self.sim_dt
                 self.pos_vel_errors[:, :, 1:, :] = self.pos_vel_errors[:, :, :-1, :].clone()
-                self.pos_vel_errors[:, :, 0, 0] = (self.actions*self.power_scale + self._default_dof_pos - self._dof_pos)
+                self.pos_vel_errors[:, :, 0, 0] = (self.target_positions - self._dof_pos)
                 self.pos_vel_errors[:, :, 0, 1] = (target_velocity - self._dof_vel) / 25.0 # TODO: Move velocity error scaling to config.
-
+            
+            self.prev_target_positions = self.target_positions.clone()
             self.update_obs_latency_buffer()
                 
         return

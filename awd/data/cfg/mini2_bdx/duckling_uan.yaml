@@ -31,7 +31,7 @@ env:
   initHeight: 1.0
   enableEarlyTermination: True
   enableTaskObs: True
-  randomizeMaskJoints: False
+  randomizeMaskJoints: True
   overrideDofLimits: True
 
   generate_num_waves: 100
@@ -45,7 +45,7 @@ env:
   save_num_plots: 20
     
   asset:
-    uanDataRoot: "output/UAN_data"
+    uanDataRoot: "output/UAN_data/new"
     assetRoot: "awd/data/assets"
     assetFileName: "mini2_bdx/mini2_bdx.urdf"
 
