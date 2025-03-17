@@ -183,6 +183,8 @@ class DucklingAMP(Duckling):
         if self.custom_origins:
             self.update_terrain_level(env_ids)
             self._duckling_root_states[env_ids] = self._initial_duckling_root_states[env_ids]
+            self._duckling_root_states[env_ids, :3] = self.env_origins[env_ids]
+            self._duckling_root_states[env_ids, 2] += 0.17
             self._duckling_root_states[env_ids, :2] += torch_rand_float(-0.5, 0.5, (len(env_ids), 2), device=self.device)
         else:
             self._duckling_root_states[env_ids] = self._initial_duckling_root_states[env_ids]
