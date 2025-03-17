@@ -33,12 +33,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 0.002,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   left_hip_roll:
     {
@@ -46,12 +46,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 0.053,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   left_hip_pitch:
     {
@@ -59,12 +59,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": -0.63,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   left_knee:
     {
@@ -72,12 +72,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 1.368,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   left_ankle:
     {
@@ -85,12 +85,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": -0.784,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   neck_pitch:
     {
@@ -98,12 +98,12 @@ dof_props:
       "stiffness": 8,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": -0.000,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   head_pitch:
     {
@@ -111,12 +111,12 @@ dof_props:
       "stiffness": 5,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": -0.000,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   head_yaw:
     {
@@ -124,12 +124,12 @@ dof_props:
       "stiffness": 5,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 0.000,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   head_roll:
     {
@@ -137,12 +137,12 @@ dof_props:
       "stiffness": 5,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 0.000,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   left_antenna:
     {
@@ -150,12 +150,12 @@ dof_props:
       "stiffness": 5,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 0.000,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   right_antenna:
     {
@@ -163,12 +163,12 @@ dof_props:
       "stiffness": 5,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 0.000,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   right_hip_yaw:
     {
@@ -176,12 +176,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": -0.003,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   right_hip_roll:
     {
@@ -189,12 +189,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": -0.065,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   right_hip_pitch:
     {
@@ -202,12 +202,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 0.635,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   right_knee:
     {
@@ -215,12 +215,12 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": 1.379,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
   right_ankle:
     {
@@ -228,10 +228,10 @@ dof_props:
       "stiffness": 10,
       "friction": 0.052,
       "armature": 0.028,
-      "velocity": 3.1,
-      "max_effort": 3.57,
+      "velocity": 3.0,
+      "max_effort": 2.5,
       "init_pos": -0.796,
       "motor_efforts": 10,
-      "p_gain": 6.55,
-      "d_gain": 0.65,
+      "p_gain": 14.55,
+      "d_gain": 1.1,
     }
