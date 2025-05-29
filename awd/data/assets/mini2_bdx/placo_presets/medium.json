@@ -23,6 +23,10 @@
   "walk_max_dy": 0.1,
   "walk_max_dx_forward": 0.08,
   "walk_max_dx_backward": 0.03,
+  
+  "head_bob": true,
+  "head_bob_amplitude": 0.125,
+  
   "joints": [
     "left_hip_yaw",
     "left_hip_roll",
@@ -42,8 +46,8 @@
     "right_ankle"
   ],
   "joint_angles": {
-    "neck_pitch": 0,
-    "head_pitch": 0,
+    "neck_pitch": 0.5,
+    "head_pitch": -0.4,
     "head_yaw": 0,
     "head_roll": 0,
     "left_antenna": 0,

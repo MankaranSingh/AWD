@@ -42,9 +42,9 @@
     "right_ankle"
   ],
   "joint_angles": {
-    "head_pitch": 0,
+    "head_pitch": -0.4,
     "head_yaw": 0,
-    "neck_pitch": 0,
+    "neck_pitch": 0.5,
     "head_roll": 0,
     "left_antenna": 0,
     "right_antenna": 0

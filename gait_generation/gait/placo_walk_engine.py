@@ -25,7 +25,7 @@ class PlacoWalkEngine:
         self.asset_path = asset_path
         self.model_filename = model_filename
         self.ignore_feet_contact = ignore_feet_contact
-
+    
         robot_type = asset_path.split("/")[-1]
         if robot_type in ["mini_bdx", "go_bdx"]:
             knee_limits = knee_limits or [-0.2, -0.01]
@@ -42,6 +42,9 @@ class PlacoWalkEngine:
             defaults_filename = os.path.join(asset_path, "placo_defaults.json")
             self.load_defaults(defaults_filename)
 
+        self.head_bob = init_params.get('head_bob', False)
+        self.head_bob_amplitude = init_params.get('head_bob_amplitude', 0.15)
+
         # Creating the kinematics solver
         self.solver = placo.KinematicsSolver(self.robot)
         self.solver.enable_velocity_limits(True)
@@ -51,6 +54,10 @@ class PlacoWalkEngine:
 
         self.robot.set_joint_limits("left_knee", *knee_limits)
         self.robot.set_joint_limits("right_knee", *knee_limits)
+        
+        self.default_angles = init_params.get('joint_angles', {})
+        for joint_name in self.default_angles:
+            self.robot.set_joint(joint_name, self.default_angles[joint_name])
 
         # Creating the walk QP tasks
         self.tasks = placo.WalkTasks()
@@ -240,7 +247,7 @@ class PlacoWalkEngine:
     def tick(self, dt, left_contact=True, right_contact=True):
         if self.start is None:
             self.start = time.time()
-
+        
         if not self.ignore_feet_contact:
             if left_contact:
                 self.time_since_last_left_contact = 0.0
@@ -262,6 +269,13 @@ class PlacoWalkEngine:
 
             self.robot.update_kinematics()
             _ = self.solver.solve(True)
+        
+        for joint_name in self.default_angles:
+            self.robot.set_joint(joint_name, self.default_angles[joint_name])
+        
+        if self.head_bob:
+            self.robot.set_joint("head_pitch", self.default_angles["head_pitch"] - self.head_bob_amplitude*np.sin(2*2*np.pi*self.t / self.period))
+            self.robot.set_joint("neck_pitch", self.default_angles["neck_pitch"] + self.head_bob_amplitude*np.sin(2*2*np.pi*self.t / self.period))
 
         # If enough time elapsed and we can replan, do the replanning
         if (

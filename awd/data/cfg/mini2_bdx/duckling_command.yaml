@@ -49,7 +49,7 @@ env:
   obsHistoryInputs: 3
   obsHistoryInputsDecimation: 1
 
-  useUANCorrection: True
+  useUANCorrection: False
   use_pd_correction: False
   uan_history_steps: 20
 
