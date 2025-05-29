@@ -28,6 +28,7 @@
 
 import torch
 import numpy as np
+import time
 
 from isaacgym import gymtorch
 
@@ -59,10 +60,13 @@ class DucklingViewMotion(DucklingAMP):
         return
 
     def pre_physics_step(self, actions):
-        self.actions = actions.to(self.device).clone()
-        forces = torch.zeros_like(self.actions)
-        force_tensor = gymtorch.unwrap_tensor(forces)
-        self.gym.set_dof_actuation_force_tensor(self.sim, force_tensor)
+        self.render()
+        self.gym.simulate(self.sim)
+        if self.cfg["args"].test:
+            elapsed_time = self.gym.get_elapsed_time(self.sim)
+            sim_time = self.gym.get_sim_time(self.sim)
+            if sim_time-elapsed_time>0:
+                time.sleep(sim_time-elapsed_time)
         return
 
     def post_physics_step(self):
